@@ -41,19 +41,17 @@ class ReadWriteLock:
             self._not_reading.set()
 
 
-def inject(where=HERE):
+def injection(where=HERE):
     for filename in os.listdir(os.path.join(where, 'inject')):
         filename = os.path.join(where, 'inject', filename)
         if os.path.isfile(filename) and os.path.splitext(filename)[1] == '.html':
-            yield filename
+            with open(filename) as f:
+                yield f.read()
 
 
-def index(where=HERE):
-    injection = ''
-    for filename in inject(where):
-        with open(filename) as i:
-            injection += i.read()
+def index(where=HERE, **format):
+    if 'inject' not in format:
+        format['inject'] = injection(where)
+    format.setdefault('title', 'Purly')
     with open(os.path.join(where, 'index.html')) as index:
-        template = index.read()
-        fill = dict(title='Purly', inject=injection)
-        return template.format(**fill)
+        return index.read().format(**format)

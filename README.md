@@ -2,6 +2,14 @@
 
 Control the web with Python.
 
+# Install
+
+Only a dev install is possible right now:
+
+```bash
+git clone https://github.com/rmorshea/purly && cd spectate/ && pip install -e . -r requirements.txt
+```
+
 # Getting Started
 
 ```python
