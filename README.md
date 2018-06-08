@@ -22,4 +22,4 @@ div.style.update(height='20px', width='20px', background_color='coral')
 
 You should now see that a div has magically appeared!
 
-<div style='height:20px; width:20px; background-color:coral'></div>
+![div with some styling](https://github.com/rmorshea/purly/docs/getting-started-div.png)
