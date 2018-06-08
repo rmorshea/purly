@@ -51,7 +51,7 @@ def injection(where=HERE):
 
 def index(where=HERE, **format):
     if 'inject' not in format:
-        format['inject'] = injection(where)
+        format['inject'] = ''.join(injection(where))
     format.setdefault('title', 'Purly')
     with open(os.path.join(where, 'index.html')) as index:
         return index.read().format(**format)

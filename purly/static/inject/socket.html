@@ -5,19 +5,21 @@
       let msg = JSON.parse(event.data);
       for (let i=0; i < msg.length; i ++) {
         update = msg[i];
-        let element = $('[data-purly-model=' + update.model + ']')[0];
-        if (update.update == 'attributes') {
-          Object.keys(update.attributes).forEach(key => {
-            let value = update.attributes[key];
-            if (value == null) {
-              element.removeAttribute(key);
-            } else {
-              element.setAttribute(key, value);
-            }
-          });
-        } else if (update.update == 'children') {
-          element.innerHTML = update.children;
-        }
+        console.log(Array.from($('[data-purly-model=' + update.model + ']')))
+        Array.from($('[data-purly-model=' + update.model + ']')).forEach(element => {
+          if (update.update == 'attributes') {
+            Object.keys(update.attributes).forEach(key => {
+              let value = update.attributes[key];
+              if (value == null) {
+                element.removeAttribute(key);
+              } else {
+                element.setAttribute(key, value);
+              }
+            });
+          } else if (update.update == 'children') {
+            element.innerHTML = update.children;
+          }
+        })
       }
       socket.send('{}');
     };

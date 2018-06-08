@@ -11,6 +11,12 @@ class HTML:
         attributes['data-purly-model'] = uuid4().hex
         self.attributes = mvc.Dict(attributes)
         self.children = mvc.List(children)
+        @mvc.view(self.style)
+        def _capture_style(change):
+            self.attributes['style'] = '; '.join(
+                '%s:%s' % (k.replace('_', '-'), v)
+                for k, v in self.style.items()
+            )
 
     def __eq__(self, other):
         return (

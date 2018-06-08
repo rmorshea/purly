@@ -2,7 +2,7 @@ import json
 import time
 import websocket
 from uuid import uuid4
-from spectate.mvc import view, Undefined, List
+from spectate import mvc
 from weakref import WeakValueDictionary
 
 from .html import HTML
@@ -24,9 +24,9 @@ class Layout:
 
     def __init__(self, uri):
         self._socket = socket(uri, timeout=2)
-        self.children = List()
+        self.children = mvc.List()
 
-        @view(self.children)
+        @mvc.view(self.children)
         def capture_elements(change):
             self._capture_elements('root', self.children)
 
@@ -77,33 +77,18 @@ class Layout:
             'attributes': attributes
         }
 
-    def _update_style(self, element, style):
-        style = '; '.join(
-            '%s:%s' % (k.replace('_', '-'), v)
-            for k, v in style.items()
-        )
-        return {
-            'model': element,
-            'update': 'attributes',
-            'attributes': {'style': style}
-        }
-
     def _capture_element(self, element):
         model = element.attributes['data-purly-model']
 
-        @view(element.attributes)
+        @mvc.view(element.attributes)
         def capture_attributes(change):
             self._sync(self._update_attributes(model, element.attributes))
-
-        @view(element.style)
-        def capture_style(change):
-            self._sync(self._update_style(model, element.style))
 
     def _capture_elements(self, parent, elements):
         self._sync(self._update_children(parent, elements))
         for e in elements:
             if isinstance(e, HTML):
-                @view(e.children)
+                @mvc.view(e.children)
                 def _capture(change):
                     model = e.attributes['data-purly-model']
                     self._capture_elements(model, e.children)
