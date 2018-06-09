@@ -12,7 +12,7 @@ git clone https://github.com/rmorshea/purly && cd purly/ && pip install -e . -r 
 
 ## Using Jupyter
 
-If you're working with the [Jupyter Notebook]((http://jupyter.org/) you can simply run the following in separate cells:
+If you're working with the [Jupyter Notebook](http://jupyter.org/) you can simply run the following in separate cells:
 
 ```python
 import purly
