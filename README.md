@@ -1,3 +1,5 @@
+[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/rmorshea/purly/master?filepath=examples/binders)
+
 # Purly
 
 Control the web with Python.
@@ -46,7 +48,7 @@ purly.state.Machine().run()
 
 Open a your browser and navigate to http://127.0.0.1:8000/ before continuing.
 
-Now you can open up an interact Python interpreter and run the following:
+Now you can open up a Python interpreter window and run the following:
 
 ```python
 layout = purly.Layout('ws://127.0.0.1:8000/model/stream')
