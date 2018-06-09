@@ -20,7 +20,7 @@ class Backoff:
         self._rate = 1.01
 
     def wait(self):
-        if self._wait > 0.1:
+        if self._wait > 0.2:
             time.sleep(self._wait)
         if self._wait < 1:
             self._wait *= self._rate
@@ -72,6 +72,7 @@ class Machine:
             register(self.server)
         self._connections = {}
         self._updates = []
+        self._model = {}
 
     @rule('route', '/')
     async def display(self, request):
@@ -84,6 +85,8 @@ class Machine:
         self._connections[conn] = 0
         backoff = Backoff()
         try:
+            # send off the current state of the model as first message
+            await socket.send(json.dumps(self._model))
             while True:
                 async with self._lock.read():
                     send = self._sync(conn)
@@ -107,12 +110,12 @@ class Machine:
     def _sync(self, connection):
         updates = self._updates[:self._connections[connection]]
         self._connections[connection] = 0
-        return updates
+        return list(reversed(updates))
 
     def _load(self, connection, update):
         if type(update) is dict:
             update = [update]
-        self._updates[:0] = update
+        self._updates[:0] = list(map(self._diff, update))
         keep_last_n_updates = 0
         for connection, staleness in self._connections.items():
             self._connections[connection] += len(update)
@@ -121,6 +124,8 @@ class Machine:
         self._connections[connection] -= len(update)
         self._updates[keep_last_n_updates:] = []
 
+    def _diff(self, data):
+        return update_differences(self._model, data, {})[1]
 
     @rule('listener', 'after_server_start')
     async def _after_server_start(self, app, loop):
@@ -137,3 +142,23 @@ class Machine:
             kwargs=kwargs,
             daemon=True,
         ).start()
+
+
+def update_differences(into, data, diff):
+    for k in data:
+        v = data[k]
+        if isinstance(v, collections.Mapping):
+            update_differences(
+                into.setdefault(k, {}),
+                v,
+                diff.setdefault(k, {}),
+            )
+        elif k in into:
+            if v is None:
+                diff[k] = None
+                del into[k]
+            elif into[k] != v:
+                diff[k] = into[k] = v
+        elif v is not None:
+            diff[k] = into[k] = v
+    return into, diff
