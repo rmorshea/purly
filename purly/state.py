@@ -13,7 +13,6 @@ from .utils import ReadWriteLock, index
 
 
 class Backoff:
-    """Fibonacci backoff"""
 
     def __init__(self):
         self._wait = 0.001
@@ -22,7 +21,7 @@ class Backoff:
     def wait(self):
         if self._wait > 0.2:
             time.sleep(self._wait)
-        if self._wait < 1:
+        if self._wait < 2:
             self._wait *= self._rate
 
     def clear(self):
