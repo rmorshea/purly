@@ -101,6 +101,7 @@ class Layout:
         def _sync_delete():
             self._sync({model_id: None})
         finalize(element, _sync_delete)
+        self._capture_elements(model, element.children)
 
     def _capture_elements(self, parent, elements):
         for e in elements:
