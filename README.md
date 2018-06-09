@@ -2,15 +2,17 @@
 
 Control the web with Python.
 
-# Install
+# Getting Started
 
-Only a dev install is possible right now:
+Install a dev version (version to pypi coming soon):
 
 ```bash
-git clone https://github.com/rmorshea/purly && cd spectate/ && pip install -e . -r requirements.txt
+git clone https://github.com/rmorshea/purly && cd purly/ && pip install -e . -r requirements.txt
 ```
 
-# Getting Started
+## Using Jupyter
+
+If you're working with the [Jupyter Notebook]((http://jupyter.org/) you can simply run the following in separate cells:
 
 ```python
 import purly
@@ -18,7 +20,9 @@ import purly
 purly.state.Machine().daemon()
 ```
 
-Open a new browser tab or page and navigate to http://127.0.0.1:8000/ before continuing.
+```python
+purly.display.output('ws://127.0.0.1:8000/model/stream')
+```
 
 ```python
 layout = purly.Layout('ws://127.0.0.1:8000/model/stream')
@@ -28,6 +32,30 @@ layout.children.append(div)
 div.style.update(height='20px', width='20px', background_color='coral')
 ```
 
-You should now see that a div has magically appeared!
+![getting started notebook gif](https://raw.githubusercontent.com/rmorshea/purly/master/docs/getting-started-notebook.png)
+
+## Using The Browser
+
+Run `python run.py` where the file `run.py` contains the following:
+
+```python
+import purly
+
+purly.state.Machine().run()
+```
+
+Open a your browser and navigate to http://127.0.0.1:8000/ before continuing.
+
+Now you can open up an interact Python interpreter and run the following:
+
+```python
+layout = purly.Layout('ws://127.0.0.1:8000/model/stream')
+
+div = layout.html('div')
+layout.children.append(div)
+div.style.update(height='20px', width='20px', background_color='coral')
+```
+
+You should now see that a div has magically appeared in the browser page you opened!
 
 ![div with some styling](https://raw.githubusercontent.com/rmorshea/purly/master/docs/getting-started-div.png)
