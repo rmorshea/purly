@@ -32,7 +32,7 @@ layout.children.append(div)
 div.style.update(height='20px', width='20px', background_color='coral')
 ```
 
-![getting started notebook gif](https://raw.githubusercontent.com/rmorshea/purly/master/docs/getting-started-notebook.png)
+![getting started notebook gif](https://github.com/rmorshea/purly/blob/master/docs/getting-started-notebook.gif)
 
 ## Using The Browser
 
