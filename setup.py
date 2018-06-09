@@ -29,7 +29,6 @@ requirements = [
     'asyncio',
     'websocket-client',
     'spectate>=0.2.1',
-    'nbserverproxy>=0.8.1'
 ]
 
 if sys.version_info < (3, 7):
