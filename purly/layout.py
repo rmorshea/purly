@@ -99,7 +99,7 @@ class Layout:
             self._capture_elements(model, element.children)
         self._update_initialize(element)
         def _sync_delete():
-            self._sync({model_id: None})
+            self._sync({model: None})
         finalize(element, _sync_delete)
         self._capture_elements(model, element.children)
 
