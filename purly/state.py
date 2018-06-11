@@ -12,22 +12,6 @@ from sanic.websocket import ConnectionClosed
 from .utils import ReadWriteLock, index
 
 
-class Backoff:
-
-    def __init__(self):
-        self._wait = 0.001
-        self._rate = 1.01
-
-    def wait(self):
-        if self._wait > 0.2:
-            time.sleep(self._wait)
-        if self._wait < 2:
-            self._wait *= self._rate
-
-    def clear(self):
-        self.__init__()
-
-
 class rule:
 
     def __new__(cls, *args, **kwargs):
@@ -82,8 +66,8 @@ class Machine:
         conn = uuid4().hex
         # initialize updates since last sync
         self._connections[conn] = 0
-        backoff = Backoff()
         try:
+            empty = 0
             # send off the current state of the model as first message
             await socket.send(json.dumps(self._model))
             while True:
@@ -95,9 +79,11 @@ class Machine:
                     async with self._lock.write():
                         self._load(conn, recv)
                 if not send and not recv:
-                    backoff.wait()
+                    empty += 1
+                    if empty > 5000:
+                        await asyncio.sleep(1)
                 else:
-                    backoff.clear()
+                    empty = 0
         except ConnectionClosed:
             pass
         except Exception:

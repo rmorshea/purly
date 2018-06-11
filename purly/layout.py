@@ -27,6 +27,7 @@ class Layout:
         # TODO: handle updates
         self._socket.recv()
         self.children = mvc.List()
+        self._known = set()
 
         @mvc.view(self.children)
         def capture_elements(change):
@@ -91,17 +92,20 @@ class Layout:
 
     def _capture_element(self, element):
         model = element.attributes['data-purly-model']
-        @mvc.view(element.attributes)
-        def capture_attributes(change):
-            self._update_attributes(model, element.attributes)
-        @mvc.view(element.children)
-        def capture_children(change):
+        if model not in self._known:
+            @mvc.view(element.attributes)
+            def capture_attributes(change):
+                self._update_attributes(model, element.attributes)
+            @mvc.view(element.children)
+            def capture_children(change):
+                self._capture_elements(model, element.children)
+            self._update_initialize(element)
+            def _sync_delete():
+                self._sync({model: None})
+                self._known.remove(model)
+            finalize(element, _sync_delete)
+            self._known.add(model)
             self._capture_elements(model, element.children)
-        self._update_initialize(element)
-        def _sync_delete():
-            self._sync({model: None})
-        finalize(element, _sync_delete)
-        self._capture_elements(model, element.children)
 
     def _capture_elements(self, parent, elements):
         for e in elements:

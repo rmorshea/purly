@@ -8,6 +8,10 @@ class HTML:
     def __init__(self, tag, *children, **attributes):
         self.tag = tag
         self.style = mvc.Dict(attributes.pop('style', {}))
+        attributes['style'] = '; '.join(
+            '%s:%s' % (k.replace('_', '-'), v)
+            for k, v in self.style.items()
+        )
         attributes['data-purly-model'] = uuid4().hex
         self.attributes = mvc.Dict(attributes)
         self.children = mvc.List(children)
@@ -17,6 +21,7 @@ class HTML:
                 '%s:%s' % (k.replace('_', '-'), v)
                 for k, v in self.style.items()
             )
+
 
     def __eq__(self, other):
         return (
