@@ -38,7 +38,8 @@
     }
 
     function registerChildren(parent, children) {
-      for (let i = 0; i < (parent.children.length - children.length); i++) {
+      let length = parent.children.length;
+      for (let i = children.length; i < length; i++) {
         parent.removeChild(parent.lastChild);
       }
       children.forEach((spec, index) => {
