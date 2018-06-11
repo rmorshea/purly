@@ -38,19 +38,24 @@
     }
 
     function registerChildren(parent, children) {
-      parent.innerHTML = '';
-      let childNode;
-      children.forEach(child => {
-        if (child.type == 'ref') {
-          if (models[child.ref]) {
-            childNode= elementFromModel(models[child.ref]);
+      for (let i = 0; i < (parent.children.length - children.length); i++) {
+        parent.removeChild(parent.lastChild);
+      }
+      children.forEach((spec, index) => {
+        let created;
+        if (spec.type == 'ref') {
+          if (models[spec.ref]) {
+            created = elementFromModel(models[spec.ref]);
           }
         } else {
           // the child is a string
-          childNode = document.createTextNode(child.str);
+          created = document.createTextNode(spec.str);
         }
-        if (childNode) {
-          parent.appendChild(childNode);
+        let current = parent.childNodes[index];
+        if (current) {
+          morphdom(current, created)
+        } else {
+          parent.appendChild(created);
         }
       })
     }
