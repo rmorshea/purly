@@ -26,7 +26,6 @@ class HTML:
     def __eq__(self, other):
         return (
             self.tag == other.tag and
-            self.style == other.style and
             self.attributes == other.attributes and
             self.children == other.children
         )

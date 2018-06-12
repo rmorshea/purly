@@ -3,7 +3,7 @@ import time
 import websocket
 from uuid import uuid4
 from spectate import mvc
-from weakref import finalize
+from weakref import finalize, WeakValueDictionary
 
 from .html import HTML
 
@@ -27,14 +27,24 @@ class Layout:
         # TODO: handle updates
         self._socket.recv()
         self.children = mvc.List()
-        self._known = set()
+        self._contains = WeakValueDictionary()
+        self._updates = []
 
         @mvc.view(self.children)
         def capture_elements(change):
             self._capture_elements('root', self.children)
 
     def html(self, tag, *children, **attributes):
-        return HTML(tag, *children, **attributes)
+        new = HTML(tag, *children, **attributes)
+        self._capture_element(new)
+        return new
+
+    def sync(self):
+        recv = json.loads(self._socket.recv())
+        # TODO: handle recieved update
+        update = list(reversed(self._updates))
+        self._socket.send(json.dumps(update))
+        self._updates.clear()
 
     def __call__(self, constructor):
         """A decorator for functions that define HTML DOM structures.
@@ -92,19 +102,25 @@ class Layout:
 
     def _capture_element(self, element):
         model = element.attributes['data-purly-model']
-        if model not in self._known:
+        if model not in self._contains:
+
             @mvc.view(element.attributes)
             def capture_attributes(change):
                 self._update_attributes(model, element.attributes)
+
             @mvc.view(element.children)
             def capture_children(change):
                 self._capture_elements(model, element.children)
+
             self._update_initialize(element)
+
             def _sync_delete():
                 self._sync({model: None})
-                self._known.remove(model)
+                del self._contains[model]
+
             finalize(element, _sync_delete)
-            self._known.add(model)
+
+            self._contains[model] = element
             self._capture_elements(model, element.children)
 
     def _capture_elements(self, parent, elements):
@@ -114,6 +130,4 @@ class Layout:
         self._update_children(parent, elements)
 
     def _sync(self, send):
-        recv = json.loads(self._socket.recv())
-        # TODO: handle recieved update
-        self._socket.send(json.dumps(send))
+        self._updates.append(send)

@@ -22,8 +22,8 @@
     function handleUpdate(update) {
       let element;
       Object.keys(update).forEach(key => {
-        element = $('[data-purly-model=' + key + ']')[0];
-        if (element) {
+        let selection = $('[data-purly-model=' + key + ']');
+        Array.from(selection).forEach(element => {
           if (update[key].children) {
             registerChildren(element, update[key].children);
           }
@@ -33,7 +33,7 @@
               element.setAttribute(key, attributes[key]);
             })
           }
-        }
+        });
       })
     }
 
