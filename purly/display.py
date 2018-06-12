@@ -27,8 +27,8 @@ def output(uri):
         function handleUpdate(update) {
           let element;
           Object.keys(update).forEach(key => {
-            element = $('[data-purly-model=' + key + ']')[0];
-            if (element) {
+            let selection = $('[data-purly-model=' + key + ']');
+            Array.from(selection).forEach(element => {
               if (update[key].children) {
                 registerChildren(element, update[key].children);
               }
@@ -38,26 +38,30 @@ def output(uri):
                   element.setAttribute(key, attributes[key]);
                 })
               }
-            }
+            });
           })
         }
 
         function registerChildren(parent, children) {
-          while (parent.firstChild) {
-              parent.removeChild(parent.firstChild);
+          let length = parent.children.length;
+          for (let i = children.length; i < length; i++) {
+            parent.removeChild(parent.lastChild);
           }
-          let childNode;
-          children.forEach(child => {
-            if (child.type == 'ref') {
-              if (models[child.ref]) {
-                childNode= elementFromModel(models[child.ref]);
+          children.forEach((spec, index) => {
+            let created;
+            if (spec.type == 'ref') {
+              if (models[spec.ref]) {
+                created = elementFromModel(models[spec.ref]);
               }
             } else {
               // the child is a string
-              childNode = document.createTextNode(child.str);
+              created = document.createTextNode(spec.str);
             }
-            if (childNode) {
-              parent.appendChild(childNode);
+            let current = parent.childNodes[index];
+            if (current) {
+              morphdom(current, created)
+            } else {
+              parent.appendChild(created);
             }
           })
         }
