@@ -61,8 +61,49 @@ class Machine:
     async def display(self, request):
         return response.html(index())
 
+    def run(self, *args, **kwargs):
+        self.server.run(*args, **kwargs)
+
+    def daemon(self, *args, **kwargs):
+        Process(
+            target=self.run,
+            args=args,
+            kwargs=kwargs,
+            daemon=True,
+        ).start()
+
+    def _load_model(self, model):
+        return update_differences(self._model, model, {})[1]
+
+    def _load_event(self, event):
+        return event
+
+    def _sync(self, connection):
+        updates = self._updates[-self._connections[connection]:]
+        self._connections[connection] = 0
+        return updates
+
+    def _load(self, connection, update):
+        added = 0
+        for data in update:
+            datatype = data['type']
+            method = getattr(self, '_load_%s' % datatype)
+            loaded = method(data[datatype])
+            if loaded is not None:
+                data[datatype] = loaded
+                self._updates.append(data)
+                added += 1
+        for c in self._connections:
+            self._connections[c] += added
+        self._connections[connection] -= added
+
+    def _clean(self):
+        if self._updates:
+            diff = len(self._updates) - max(self._connections.values())
+            self._updates[:diff] = []
+
     @rule('websocket', 'model/stream')
-    async def _stream_update(self, request, socket):
+    async def _stream(self, request, socket):
         conn = uuid4().hex
         # initialize updates since last sync
         self._connections[conn] = 0
@@ -80,10 +121,11 @@ class Machine:
                         self._load(conn, recv)
                 if not send and not recv:
                     empty += 1
-                    if empty > 5000:
+                    if empty > 2000:
                         await asyncio.sleep(1)
                 else:
                     empty = 0
+                self._clean()
         except ConnectionClosed:
             pass
         except Exception:
@@ -92,41 +134,10 @@ class Machine:
         finally:
             del self._connections[conn]
 
-    def _sync(self, connection):
-        updates = self._updates[:self._connections[connection]]
-        self._connections[connection] = 0
-        return list(reversed(updates))
-
-    def _load(self, connection, update):
-        if type(update) is dict:
-            update = [update]
-        self._updates[:0] = list(map(self._diff, update))
-        keep_last_n_updates = 0
-        for connection, staleness in self._connections.items():
-            self._connections[connection] += len(update)
-            if self._connections[connection] > keep_last_n_updates:
-                keep_last_n_updates = self._connections[connection]
-        self._connections[connection] -= len(update)
-        self._updates[keep_last_n_updates:] = []
-
-    def _diff(self, data):
-        return update_differences(self._model, data, {})[1]
-
     @rule('listener', 'after_server_start')
     async def _after_server_start(self, app, loop):
         # initialize anything that requires the current event loop
         self._lock = ReadWriteLock()
-
-    def run(self, *args, **kwargs):
-        self.server.run(*args, **kwargs)
-
-    def daemon(self, *args, **kwargs):
-        Process(
-            target=self.run,
-            args=args,
-            kwargs=kwargs,
-            daemon=True,
-        ).start()
 
 
 def update_differences(into, data, diff):

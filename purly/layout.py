@@ -35,12 +35,10 @@ class Layout:
             self._capture_elements('root', self.children)
 
         def _sync_delete():
-            self._sync({'root': {'children': []}})
+            self._send({'root': {'children': []}})
             self.sync()
 
         finalize(self, _sync_delete)
-
-
 
     def html(self, tag, *children, **attributes):
         new = HTML(tag, *children, **attributes)
@@ -49,10 +47,18 @@ class Layout:
 
     def sync(self):
         recv = json.loads(self._socket.recv())
+        for msg in recv:
+            if msg['type'] == 'event':
+                for model, event in msg['event'].items():
+                    if model in self._contains:
+                        self._contains[model].trigger(event)
         # TODO: handle recieved update
-        update = list(reversed(self._updates))
-        self._socket.send(json.dumps(update))
+        self._socket.send(json.dumps(self._updates))
         self._updates.clear()
+
+    def serve(self):
+        while True:
+            self.sync()
 
     def __call__(self, constructor):
         """A decorator for functions that define HTML DOM structures.
@@ -97,14 +103,20 @@ class Layout:
                     'type': 'str',
                     'str': str(c)
                 })
-        self._sync({model: {'children': serialized}})
+        self._send({model: {'children': serialized}})
 
     def _update_initialize(self, element):
         model = element.attributes['data-purly-model']
-        self._sync({model: {'tag': element.tag}})
+        self._send({model: {'tag': element.tag}})
 
     def _update_attributes(self, model, attributes):
-        self._sync({model: {'attributes': attributes}})
+        self._send({model: {'attributes': attributes}})
+
+    def _update_events(self, model, events):
+        update = {}
+        for etype, (_, data) in events.items():
+            update[etype] = data
+        self._send({model: {'events': update}})
 
     def _capture_element(self, element):
         model = element.attributes['data-purly-model']
@@ -125,17 +137,22 @@ class Layout:
             def capture_children(change):
                 self._capture_elements(model, element.children)
 
+            @mvc.view(element.events)
+            def capture_events(change):
+                self._update_events(model, element.events)
+
             def _sync_delete():
-                self._sync({model: None})
+                self._send({model: None})
 
             finalize(element, _sync_delete)
             self._contains[model] = element
             self._update_initialize(element)
-            self._update_attributes(model, element.attributes)
+            self._update_events(model, element.events)
+            self._update_attributes(model, element.attributes.copy())
             self._capture_elements(model, element.children)
 
     def _capture_elements(self, parent, elements):
         self._update_children(parent, elements)
 
-    def _sync(self, send):
-        self._updates.append(send)
+    def _send(self, send, what='model'):
+        self._updates.append({'type': what, what: send})

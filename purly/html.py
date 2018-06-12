@@ -13,14 +13,29 @@ class HTML:
             for k, v in self.style.items()
         )
         attributes['data-purly-model'] = uuid4().hex
+
         self.attributes = mvc.Dict(attributes)
         self.children = mvc.List(children)
+        self.events = mvc.Dict()
+
         @mvc.view(self.style)
         def _capture_style(change):
             self.attributes['style'] = '; '.join(
                 '%s:%s' % (k.replace('_', '-'), v)
                 for k, v in self.style.items()
             )
+
+    def on(self, event, *data):
+        def setup(function):
+            self.events[event] = (function, data)
+            return function
+        return setup
+
+    def trigger(self, event):
+        etype = event['type']
+        if etype in self.events:
+            function, _ = self.events[etype]
+            function(event[etype])
 
     def __eq__(self, other):
         return (

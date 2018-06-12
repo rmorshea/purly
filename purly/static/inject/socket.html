@@ -1,6 +1,7 @@
 <script type="text/JavaScript">
   $(document).ready(function() {
     let models;
+    let toSend = [];
     let socket = new WebSocket('ws://' + document.domain + ':' + location.port + '/model/stream');
 
     socket.onmessage = function onFirstMessage(event) {
@@ -13,25 +14,32 @@
 
     function onMessage(event) {
       JSON.parse(event.data).forEach(update => {
-        mergeDeep(models, update);
-        handleUpdate(update);
+        if (update.type == 'model') {
+          mergeDeep(models, update.model);
+          handleUpdate(update.model);
+        }
       });
-      socket.send('{}');
+      let msg = [];
+      while (toSend.length) {
+        msg.push(toSend.shift());
+      }
+      socket.send(JSON.stringify(msg));
     }
 
     function handleUpdate(update) {
-      let element;
       Object.keys(update).forEach(key => {
         let selection = $('[data-purly-model=' + key + ']');
         Array.from(selection).forEach(element => {
-          if (update[key].children) {
-            registerChildren(element, update[key].children);
-          }
-          if (update[key].attributes) {
-            let attributes = update[key].attributes;
-            Object.keys(attributes).forEach(key => {
-              element.setAttribute(key, attributes[key]);
-            })
+          if (update[key]) {
+            if (update[key].children) {
+              registerChildren(element, update[key].children);
+            } else if (update[key].attributes) {
+              registerAttributes(element, update[key].attributes);
+            } else if (update[key].events) {
+              registerEvents(element, update[key].events);
+            }
+          } else {
+            registerChildren(element, []);
           }
         });
       })
@@ -61,21 +69,61 @@
             // TODO: No morphdom defined in notebook in binder?
             morphdom(current, created)
           }
-        } else {
+        } else if (created) {
           parent.appendChild(created);
+        }
+      })
+    }
+
+    function registerEvents(element, events) {
+      let model = element.getAttribute('data-purly-model');
+      Object.keys(events).forEach(type => {
+        let uses = events[type];
+        $(element).on(type, e => {
+          let data = new Object();
+          uses.forEach(key => {
+            data[key] = e[key];
+          })
+          toSend.push(formEvent(model, type, data));
+        })
+      })
+      for (let i=0; i<events.length; i++) {
+        element.addEventListener(events[i], e => {
+        }, false);
+      }
+    }
+
+    function registerAttributes(element, attributes) {
+      Object.keys(attributes).forEach(key => {
+        let value = attributes[key];
+        if (value != null) {
+          element.setAttribute(key, value);
+        } else {
+          element.removeAttribute(key, value);
         }
       })
     }
 
     function elementFromModel(model) {
       let element = document.createElement(model.tag);
-      Object.keys(model.attributes).forEach(key => {
-        element.setAttribute(key, model.attributes[key]);
-      })
+      registerAttributes(element, model.attributes);
       registerChildren(element, model.children ? model.children : []);
+      registerEvents(element, model.events)
       return element;
     }
   });
+
+  function formEvent(model, type, data) {
+    return {
+      type: 'event',
+      'event': {
+        [model]: {
+          'type': type,
+          [type]: data
+        }
+      }
+    };
+  }
 
   function isObject(item) {
     return (item && typeof item === 'object' && !Array.isArray(item));
