@@ -54,8 +54,13 @@
         }
         let current = parent.childNodes[index];
         if (current) {
-          parent.insertBefore(created, current);
-          parent.removeChild(current);
+          if (typeof morphdom == 'undefined') {
+            parent.insertBefore(created, current);
+            parent.removeChild(current);
+          } else {
+            // TODO: No morphdom defined in notebook in binder?
+            morphdom(current, created)
+          }
         } else {
           parent.appendChild(created);
         }
@@ -67,7 +72,7 @@
       Object.keys(model.attributes).forEach(key => {
         element.setAttribute(key, model.attributes[key]);
       })
-      registerChildren(element, model.children);
+      registerChildren(element, model.children ? model.children : []);
       return element;
     }
   });

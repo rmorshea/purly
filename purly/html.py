@@ -22,7 +22,6 @@ class HTML:
                 for k, v in self.style.items()
             )
 
-
     def __eq__(self, other):
         return (
             self.tag == other.tag and

@@ -34,6 +34,14 @@ class Layout:
         def capture_elements(change):
             self._capture_elements('root', self.children)
 
+        def _sync_delete():
+            self._sync({'root': {'children': []}})
+            self.sync()
+
+        finalize(self, _sync_delete)
+
+
+
     def html(self, tag, *children, **attributes):
         new = HTML(tag, *children, **attributes)
         self._capture_element(new)
@@ -92,41 +100,41 @@ class Layout:
         self._sync({model: {'children': serialized}})
 
     def _update_initialize(self, element):
-        model_id = element.attributes['data-purly-model']
-        init = {'attributes': {}, 'children': [], 'tag': element.tag}
-        self._sync({model_id: init})
-        self._update_attributes(model_id, element.attributes)
+        model = element.attributes['data-purly-model']
+        self._sync({model: {'tag': element.tag}})
 
     def _update_attributes(self, model, attributes):
         self._sync({model: {'attributes': attributes}})
 
     def _capture_element(self, element):
         model = element.attributes['data-purly-model']
+
         if model not in self._contains:
 
             @mvc.view(element.attributes)
             def capture_attributes(change):
-                self._update_attributes(model, element.attributes)
+                attributes = {}
+                for c in change:
+                    new = c['new']
+                    if new is mvc.Undefined:
+                        new = None
+                    attributes[c['key']] = None
+                self._update_attributes(model, attributes)
 
             @mvc.view(element.children)
             def capture_children(change):
                 self._capture_elements(model, element.children)
 
-            self._update_initialize(element)
-
             def _sync_delete():
                 self._sync({model: None})
-                del self._contains[model]
 
             finalize(element, _sync_delete)
-
             self._contains[model] = element
+            self._update_initialize(element)
+            self._update_attributes(model, element.attributes)
             self._capture_elements(model, element.children)
 
     def _capture_elements(self, parent, elements):
-        for e in elements:
-            if isinstance(e, HTML):
-                self._capture_element(e)
         self._update_children(parent, elements)
 
     def _sync(self, send):
