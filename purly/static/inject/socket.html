@@ -54,7 +54,13 @@
         }
         let current = parent.childNodes[index];
         if (current) {
-          morphdom(current, created)
+          if (typeof morphdom == 'undefined') {
+            parent.insertBefore(created, current);
+            parent.removeChild(current);
+          } else {
+            // TODO: No morphdom defined in notebook in binder?
+            morphdom(current, created)
+          }
         } else {
           parent.appendChild(created);
         }
