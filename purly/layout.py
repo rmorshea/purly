@@ -130,7 +130,7 @@ class Layout:
                     new = c['new']
                     if new is mvc.Undefined:
                         new = None
-                    attributes[c['key']] = None
+                    attributes[c['key']] = new
                 self._update_attributes(model, attributes)
 
             @mvc.view(element.children)
