@@ -1,8 +1,8 @@
-[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/rmorshea/purly/master?filepath=examples/binders)
+[![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/rmorshea/purly/master?filepath=examples/notebooks)
 
 # Purly
 
-Control the web with Python - [try it now](https://mybinder.org/v2/gh/rmorshea/purly/master?filepath=examples/binders/introduction.ipynb)!
+Control the web with Python - [try it now](https://mybinder.org/v2/gh/rmorshea/purly/master?filepath=examples/notebooks/introduction.ipynb)!
 
 # Install
 
@@ -22,7 +22,7 @@ import purly
 purly.state.Machine().run()
 ```
 
-Open a your browser and navigate to http://127.0.0.1:8000/ before continuing.
+Open a your browser and navigate to http://127.0.0.1:8000/model before continuing.
 
 Now you can open up a Python interpreter window and run the following:
 

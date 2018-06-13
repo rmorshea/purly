@@ -3,9 +3,11 @@ import time
 import websocket
 from uuid import uuid4
 from spectate import mvc
-from weakref import finalize, WeakValueDictionary
+from weakref import WeakValueDictionary
 
+from .utils import finalize, load_static_html
 from .html import HTML
+from .display import output
 
 
 def socket(uri, timeout=0, *args, **kwargs):
@@ -23,6 +25,7 @@ def socket(uri, timeout=0, *args, **kwargs):
 class Layout:
 
     def __init__(self, uri):
+        self._uri = uri
         self._socket = socket(uri, timeout=2)
         # TODO: handle updates
         self._socket.recv()
@@ -34,11 +37,10 @@ class Layout:
         def capture_elements(change):
             self._capture_elements('root', self.children)
 
+        @finalize(self)
         def _sync_delete():
             self._send({'root': {'children': []}})
             self.sync()
-
-        finalize(self, _sync_delete)
 
     def html(self, tag, *children, **attributes):
         new = HTML(tag, *children, **attributes)
@@ -56,8 +58,13 @@ class Layout:
         self._socket.send(json.dumps(self._updates))
         self._updates.clear()
 
-    def serve(self):
+    def serve(self, function=None):
         while True:
+            if function is not None:
+                try:
+                    function()
+                except StopIteration:
+                    break
             self.sync()
 
     def __call__(self, constructor):
@@ -141,10 +148,10 @@ class Layout:
             def capture_events(change):
                 self._update_events(model, element.events)
 
+            @finalize(element)
             def _sync_delete():
                 self._send({model: None})
 
-            finalize(element, _sync_delete)
             self._contains[model] = element
             self._update_initialize(element)
             self._update_events(model, element.events)
@@ -156,3 +163,7 @@ class Layout:
 
     def _send(self, send, what='model'):
         self._updates.append({'type': what, what: send})
+
+    def _repr_html_(self):
+        """Rich display output for ipython."""
+        return output(self._uri).data

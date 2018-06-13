@@ -2,7 +2,9 @@
   $(document).ready(function() {
     let models;
     let toSend = [];
-    let socket = new WebSocket('ws://' + document.domain + ':' + location.port + '/model/stream');
+    // inject the url for the socket.
+    // via python string formatting.
+    let socket = new WebSocket({{uri}});
 
     socket.onmessage = function onFirstMessage(event) {
       models = JSON.parse(event.data);

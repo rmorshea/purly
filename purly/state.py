@@ -9,7 +9,11 @@ from multiprocessing import Process
 from sanic import Sanic, response
 from sanic.websocket import ConnectionClosed
 
-from .utils import ReadWriteLock, index
+from .utils import ReadWriteLock, load_static_html, finalize
+
+
+class _Dict(dict):
+    """can't create weakref to ``dict``"""
 
 
 class rule:
@@ -55,11 +59,49 @@ class Machine:
             register(self.server)
         self._connections = {}
         self._updates = []
-        self._model = {}
+        self._models = {}
 
-    @rule('route', '/')
-    async def display(self, request):
-        return response.html(index())
+    def model(self, key):
+        """Get a model.
+
+        The model will be cleaned up when all references to it are lost.
+
+        Parameters
+        ----------
+        key : hashable
+            An identifier to associate with the model.
+
+        Returns
+        -------
+        model : dict
+            A model that is used as a "source of truth" for clients.
+        """
+        if key in self._models:
+            m = self._models[key]
+        else:
+            m = self._models[key] = _Dict()
+            @finalize(m)
+            def clean():
+                del self._models[key]
+        return m
+
+    @rule('route', '/<model>/index')
+    async def display(self, request, model):
+        html = '''
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>%s</title>
+            </head>
+            <body>
+                <div data-purly-model="root"></div>
+                %s
+            </body>
+        </html>
+        '''
+        uri = f"'ws://' + document.domain + ':' + location.port + '/{model}/stream'"
+        return response.html(html % (model, load_static_html(uri=uri)))
 
     def run(self, *args, **kwargs):
         self.server.run(*args, **kwargs)
@@ -72,10 +114,10 @@ class Machine:
             daemon=True,
         ).start()
 
-    def _load_model(self, model):
-        return update_differences(self._model, model, {})[1]
+    def _load_model(self, conn, model, update):
+        return update_differences(model, update, {})[1]
 
-    def _load_event(self, event):
+    def _load_event(self, conn, model, event):
         return event
 
     def _sync(self, connection):
@@ -84,12 +126,12 @@ class Machine:
         self._connections[connection] = 0
         return updates
 
-    def _load(self, connection, update):
+    def _load(self, connection, model, update):
         added = 0
         for data in update:
             datatype = data['type']
             method = getattr(self, '_load_%s' % datatype)
-            loaded = method(data[datatype])
+            loaded = method(connection, model, data[datatype])
             if loaded is not None:
                 data[datatype] = loaded
                 self._updates.append(data)
@@ -103,15 +145,17 @@ class Machine:
             diff = len(self._updates) - max(self._connections.values())
             self._updates[:diff] = []
 
-    @rule('websocket', 'model/stream')
-    async def _stream(self, request, socket):
-        conn = uuid4().hex
-        # initialize updates since last sync
+    @rule('websocket', '<model>/stream')
+    async def _stream(self, request, socket, model):
+        conn = uuid4().hex + model
+        # initialize connection staleness.
         self._connections[conn] = 0
+        # keep a reference to the model alive.
+        model = self.model(model)
         try:
             empty = 0
             # send off the current state of the model as first message
-            await socket.send(json.dumps(self._model))
+            await socket.send(json.dumps(model))
             while True:
                 async with self._lock.read():
                     send = self._sync(conn)
@@ -119,7 +163,7 @@ class Machine:
                 recv = json.loads(await socket.recv())
                 if recv:
                     async with self._lock.write():
-                        self._load(conn, recv)
+                        self._load(conn, model, recv)
                 if not send and not recv:
                     empty += 1
                     if empty > 2000:
