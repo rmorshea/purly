@@ -79,7 +79,8 @@ class Machine:
         return event
 
     def _sync(self, connection):
-        updates = self._updates[-self._connections[connection]:]
+        trim = len(self._updates) - self._connections[connection]
+        updates = self._updates[trim:]
         self._connections[connection] = 0
         return updates
 
