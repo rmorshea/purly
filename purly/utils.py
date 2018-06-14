@@ -57,7 +57,7 @@ def load_static_html(*where, **format):
         where = os.path.join(*where)
 
     html = ''
-    for filename in os.listdir(where):
+    for filename in sorted(os.listdir(where)):
         filename = os.path.join(where, filename)
         if os.path.isfile(filename) and os.path.splitext(filename)[1] == '.html':
             with open(filename) as f:

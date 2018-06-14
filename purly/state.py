@@ -71,7 +71,6 @@ class Machine:
                 <title>%s</title>
             </head>
             <body>
-                <div data-purly-model="root"></div>
                 %s
             </body>
         </html>
