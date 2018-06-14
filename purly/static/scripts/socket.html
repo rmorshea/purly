@@ -81,6 +81,7 @@
       let model = element.getAttribute('data-purly-model');
       Object.keys(events).forEach(type => {
         let uses = events[type];
+        $(element).unbind(type);
         $(element).on(type, e => {
           let data = new Object();
           uses.forEach(key => {
@@ -89,10 +90,6 @@
           toSend.push(formEvent(model, type, data));
         })
       })
-      for (let i=0; i<events.length; i++) {
-        element.addEventListener(events[i], e => {
-        }, false);
-      }
     }
 
     function registerAttributes(element, attributes) {
