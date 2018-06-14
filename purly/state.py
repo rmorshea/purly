@@ -58,32 +58,8 @@ class Machine:
             register = getattr(self, name)
             register(self.server)
         self._connections = {}
-        self._updates = []
+        self._updates = {}
         self._models = {}
-
-    def model(self, key):
-        """Get a model.
-
-        The model will be cleaned up when all references to it are lost.
-
-        Parameters
-        ----------
-        key : hashable
-            An identifier to associate with the model.
-
-        Returns
-        -------
-        model : dict
-            A model that is used as a "source of truth" for clients.
-        """
-        if key in self._models:
-            m = self._models[key]
-        else:
-            m = self._models[key] = _Dict()
-            @finalize(m)
-            def clean():
-                del self._models[key]
-        return m
 
     @rule('route', '/<model>/index')
     async def display(self, request, model):
@@ -114,48 +90,42 @@ class Machine:
             daemon=True,
         ).start()
 
-    def _load_model(self, conn, model, update):
-        return update_differences(model, update, {})[1]
+    def _load_model(self, model, update):
+        return update_differences(self._models[model], update, {})[1]
 
-    def _load_event(self, conn, model, event):
+    def _load_event(self, model, event):
         return event
 
-    def _sync(self, connection):
-        trim = len(self._updates) - self._connections[connection]
-        updates = self._updates[trim:]
-        self._connections[connection] = 0
+    def _sync(self, conn):
+        updates = self._updates[conn][:]
+        self._updates[conn].clear()
         return updates
 
-    def _load(self, connection, model, update):
-        added = 0
+    def _load(self, conn, model, update):
+        distribute = []
         for data in update:
             datatype = data['type']
             method = getattr(self, '_load_%s' % datatype)
-            loaded = method(connection, model, data[datatype])
-            if loaded is not None:
+            loaded = method(model, data[datatype])
+            if loaded:
                 data[datatype] = loaded
-                self._updates.append(data)
-                added += 1
-        for c in self._connections:
-            self._connections[c] += added
-        self._connections[connection] -= added
-
-    def _clean(self):
-        if self._updates:
-            diff = len(self._updates) - max(self._connections.values())
-            self._updates[:diff] = []
+                distribute.append(data)
+        for c in self._connections[model]:
+            if c != conn:
+                self._updates[c].extend(distribute)
 
     @rule('websocket', '<model>/stream')
     async def _stream(self, request, socket, model):
-        conn = uuid4().hex + model
-        # initialize connection staleness.
-        self._connections[conn] = 0
+        conn = uuid4().hex
+        self._connections.setdefault(model, []).append(conn)
+        self._models.setdefault(model, {})
+        self._updates[conn] = []
         # keep a reference to the model alive.
-        model = self.model(model)
         try:
             empty = 0
             # send off the current state of the model as first message
-            await socket.send(json.dumps(model))
+            m = self._models[model]
+            await socket.send(json.dumps(m))
             while True:
                 async with self._lock.read():
                     send = self._sync(conn)
@@ -170,14 +140,20 @@ class Machine:
                         await asyncio.sleep(1)
                 else:
                     empty = 0
-                self._clean()
         except ConnectionClosed:
             pass
         except Exception:
             socket.close()
             raise
         finally:
-            del self._connections[conn]
+            self._clean(model, conn)
+
+    def _clean(self, model, conn):
+        del self._updates[conn]
+        self._connections[model].remove(conn)
+        if not len(self._connections[model]):
+            del self._connections[model]
+            del self._models[model]
 
     @rule('listener', 'after_server_start')
     async def _after_server_start(self, app, loop):
