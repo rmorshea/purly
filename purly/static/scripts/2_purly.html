@@ -8,25 +8,35 @@
     let socket = new WebSocket({{uri}});
 
     socket.onmessage = function onFirstMessage(event) {
-      models = JSON.parse(event.data);
-      if (models.root) {
-        handleUpdate({root: models.root});
+      messages = JSON.parse(event.data);
+      if (messages) {
+        models = messages[0].content;
+        if (models.root) {
+          handleUpdate({root: models.root});
+        }
+        messages.shift();
+        handleMessages(messages)
       }
       socket.onmessage = onMessage;
-    }
+      socket.send('[]');
+    };
 
     function onMessage(event) {
-      JSON.parse(event.data).forEach(update => {
-        if (update.type == 'model') {
-          mergeDeep(models, update.model);
-          handleUpdate(update.model);
-        }
-      });
+      handleMessages(JSON.parse(event.data));
       let msg = [];
       while (toSend.length) {
         msg.push(toSend.shift());
       }
       socket.send(JSON.stringify(msg));
+    }
+
+    function handleMessages(messages) {
+      messages.forEach(msg => {
+        if (msg.header.type == 'update') {
+          mergeDeep(models, msg.content);
+          handleUpdate(msg.content);
+        }
+      });
     }
 
     function handleUpdate(update) {
@@ -88,6 +98,7 @@
           uses.forEach(key => {
             data[key] = e[key];
           })
+          console.log(formEvent(model, type, data));
           toSend.push(formEvent(model, type, data));
         })
       })
@@ -115,8 +126,10 @@
 
   function formEvent(model, type, data) {
     return {
-      type: 'event',
-      'event': {
+      header: {
+        type: 'signal'
+      },
+      content: {
         [model]: {
           'type': type,
           [type]: data

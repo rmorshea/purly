@@ -5,7 +5,7 @@ from uuid import uuid4
 from spectate import mvc
 from weakref import WeakValueDictionary
 
-from .utils import finalize, load_static_html
+from .utils import finalize, load_static_html, merge
 from .html import HTML
 from .display import output
 
@@ -28,7 +28,6 @@ class Layout:
         self._uri = uri
         self._socket = socket(uri, timeout=2)
         # TODO: handle updates
-        self._socket.recv()
         self.children = mvc.List()
         self._contains = WeakValueDictionary()
         self._updates = []
@@ -50,11 +49,10 @@ class Layout:
     def sync(self):
         recv = json.loads(self._socket.recv())
         for msg in recv:
-            if msg['type'] == 'event':
-                for model, event in msg['event'].items():
-                    if model in self._contains:
-                        self._contains[model].trigger(event)
-        # TODO: handle recieved update
+            datatype = msg['header']['type']
+            method = '_recv_%s' % datatype
+            if hasattr(self, method):
+                getattr(self, method)(msg['content'])
         self._socket.send(json.dumps(self._updates))
         self._updates.clear()
 
@@ -161,8 +159,17 @@ class Layout:
     def _capture_elements(self, parent, elements):
         self._update_children(parent, elements)
 
-    def _send(self, send, what='model'):
-        self._updates.append({'type': what, what: send})
+    def _send(self, send, what='update'):
+        msg = {'header': {'type': what}, 'content': send}
+        self._updates.append(msg)
+
+    def _recv_update(self, msg):
+        pass
+
+    def _recv_signal(self, msg):
+        for model, event in msg.items():
+            if model in self._contains:
+                self._contains[model].trigger(event)
 
     def _repr_html_(self):
         """Rich display output for ipython."""

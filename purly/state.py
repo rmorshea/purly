@@ -2,14 +2,13 @@ import json
 import time
 import types
 import asyncio
-import collections
 from uuid import uuid4
 from multiprocessing import Process
 
 from sanic import Sanic, response
 from sanic.websocket import ConnectionClosed
 
-from .utils import ReadWriteLock, load_static_html, finalize
+from .utils import ReadWriteLock, load_static_html, finalize, diff
 
 
 class _Dict(dict):
@@ -89,23 +88,24 @@ class Machine:
             daemon=True,
         ).start()
 
-    def _load_model(self, model, update):
-        return update_differences(self._models[model], update, {})[1]
+    def _load_update(self, model, update):
+        return diff(self._models[model], update)
 
-    def _load_event(self, model, event):
-        return event
+    def _load_signal(self, model, signal):
+        return signal
 
     def _sync(self, conn):
-        updates = self._updates[conn][:]
-        self._updates[conn].clear()
-        return updates
+        index = len(self._updates[conn])
+        send = self._updates[conn][:index]
+        self._updates[conn][:index] = []
+        return send
 
     def _load(self, conn, model, update):
         distribute = []
         for data in update:
-            datatype = data['type']
+            datatype = data['header']['type']
             method = getattr(self, '_load_%s' % datatype)
-            loaded = method(model, data[datatype])
+            loaded = method(model, data['content'])
             if loaded:
                 data[datatype] = loaded
                 distribute.append(data)
@@ -117,26 +117,25 @@ class Machine:
     async def _stream(self, request, socket, model):
         conn = uuid4().hex
         self._connections.setdefault(model, []).append(conn)
-        self._models.setdefault(model, {})
-        self._updates[conn] = []
+        m = self._models.setdefault(model, {})
+        # send off the current state of the model as first message
+        initialize = {'header': {'type': 'update'}, 'content': m}
+        self._updates[conn] = [initialize]
         # keep a reference to the model alive.
         try:
             empty = 0
-            # send off the current state of the model as first message
-            m = self._models[model]
-            await socket.send(json.dumps(m))
             while True:
-                async with self._lock.read():
-                    send = self._sync(conn)
+                send = self._sync(conn)
                 await socket.send(json.dumps(send))
                 recv = json.loads(await socket.recv())
                 if recv:
-                    async with self._lock.write():
-                        self._load(conn, model, recv)
+                    self._load(conn, model, recv)
+                # throttle connections with few udpates
                 if not send and not recv:
-                    empty += 1
                     if empty > 2000:
-                        await asyncio.sleep(1)
+                        await asyncio.sleep(0.5)
+                    else:
+                        empty += 1
                 else:
                     empty = 0
         except ConnectionClosed:
@@ -153,28 +152,3 @@ class Machine:
         if not len(self._connections[model]):
             del self._connections[model]
             del self._models[model]
-
-    @rule('listener', 'after_server_start')
-    async def _after_server_start(self, app, loop):
-        # initialize anything that requires the current event loop
-        self._lock = ReadWriteLock()
-
-
-def update_differences(into, data, diff):
-    for k in data:
-        v = data[k]
-        if isinstance(v, collections.Mapping):
-            update_differences(
-                into.setdefault(k, {}),
-                v,
-                diff.setdefault(k, {}),
-            )
-        elif k in into:
-            if v is None:
-                diff[k] = None
-                del into[k]
-            elif into[k] != v:
-                diff[k] = into[k] = v
-        elif v is not None:
-            diff[k] = into[k] = v
-    return into, diff
