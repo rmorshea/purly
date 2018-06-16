@@ -8,7 +8,7 @@ from multiprocessing import Process
 from sanic import Sanic, response
 from sanic.websocket import ConnectionClosed
 
-from .utils import ReadWriteLock, load_static_html, finalize, diff
+from .utils import load_static_html, finalize, diff
 
 
 class _Dict(dict):
