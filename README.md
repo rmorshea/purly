@@ -1,8 +1,10 @@
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/rmorshea/purly/master?filepath=examples/notebooks)
 
+
 # Purly
 
 Control the web with Python - [try it now](https://mybinder.org/v2/gh/rmorshea/purly/master?filepath=examples/notebooks/introduction.ipynb)!
+
 
 # Install
 
@@ -11,6 +13,7 @@ Install a dev version (version to pypi coming soon):
 ```bash
 git clone https://github.com/rmorshea/purly && cd purly/ && pip install -e . -r requirements.txt
 ```
+
 
 # Getting Started
 
@@ -42,3 +45,32 @@ You should now see that a div has magically appeared in the browser page you ope
 ## In The Notebook
 
 If you're using the Jupyter Notebook checkout [these examples](https://github.com/rmorshea/purly/tree/master/examples/notebooks).
+
+# How It Works
+
+Purly
+A model server to store the state of view models. This server is built using [sanic](https://github.com/channelcat/sanic) an async Python 3.5+ web server, and is capable of keep multiple concurrent web socket clients in sync. Clients are able to produce and consume updates.
+
+
+## Message Protocol
+
+```python
+{
+  "header": {
+    "type": str,
+    # Message type (signal or update).
+    "version": "0.1",
+    # Message protocol version.
+  }
+  # Content which depends on the message type.
+  "content": dict,
+}
+```
+
+
+### Updates
+
+
+
+
+### Signals
