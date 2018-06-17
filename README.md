@@ -42,14 +42,17 @@ You should now see that a div has magically appeared in the browser page you ope
 
 ![div with some styling](https://raw.githubusercontent.com/rmorshea/purly/master/docs/getting-started-div.png)
 
+
 ## In The Notebook
 
 If you're using the Jupyter Notebook checkout [these examples](https://github.com/rmorshea/purly/tree/master/examples/notebooks).
 
+
 # How It Works
 
-Purly
-A model server to store the state of view models. This server is built using [sanic](https://github.com/channelcat/sanic) an async Python 3.5+ web server, and is capable of keep multiple concurrent web socket clients in sync. Clients are able to produce and consume updates.
+![protocol](https://raw.githubusercontent.com/rmorshea/purly/docs/docs/protocol/protocol.gif)
+
+Purly uses a model server to keep multiple concurrent clients in sync. The animation above shows 2 clients - a Python client pushing updates to a single Browser - however you could have more Python clients producing, and more Browser clients consuming, model updates.
 
 
 ## Message Protocol
