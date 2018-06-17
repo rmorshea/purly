@@ -20,7 +20,11 @@ class Machine(Server):
             </body>
         </html>
         '''
-        uri = f"'ws://' + document.domain + ':' + location.port + '/{model}/stream'"
+        if request.url.startswith('https'):
+            protocol = 'wss'
+        else:
+            protocol = 'ws'
+        uri = f"'{protocol}://' + document.domain + ':' + location.port + '/{model}/stream'"
         return response.html(html % (model, load_static_html(uri=uri)))
 
     @rule('route', '/<model>/state')
