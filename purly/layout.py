@@ -124,4 +124,4 @@ class Layout(Client):
 
     def _repr_html_(self):
         """Rich display output for ipython."""
-        return output(self._uri).data
+        return output(self._url).data

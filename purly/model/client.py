@@ -5,10 +5,10 @@ import websocket
 
 class Client:
 
-    def __init__(self, uri):
-        self._uri = uri
+    def __init__(self, url):
+        self._url = url
         self._updates = []
-        self._socket = create_socket(uri, connection_timeout=2)
+        self._socket = create_socket(url, connection_timeout=2)
 
     def sync(self):
         recv = json.loads(self._socket.recv())
