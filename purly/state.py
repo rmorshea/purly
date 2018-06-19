@@ -20,7 +20,7 @@ class Machine(Server):
             </body>
         </html>
         '''
-        if 'https' in (request.scheme, request.headers['x-scheme']):
+        if 'https' in (request.scheme, request.headers.get('x-scheme')):
             protocol = 'wss'
         else:
             protocol = 'ws'

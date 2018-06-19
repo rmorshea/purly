@@ -1,5 +1,6 @@
 <div data-purly-model="root"></div>
 <script type="text/JavaScript">
+
   $(document).ready(function() {
     let models;
     let toSend = [];
@@ -33,7 +34,7 @@
     function handleMessages(messages) {
       messages.forEach(msg => {
         if (msg.header.type == 'update') {
-          mergeDeep(models, msg.content);
+          mergeDeepDifference(models, msg.content);
           handleUpdate(msg.content);
         }
       });
@@ -98,7 +99,7 @@
           uses.forEach(key => {
             data[key] = e[key];
           })
-          toSend.push(formEvent(model, type, data));
+          sendEvent(model, type, data);
         })
       })
     }
@@ -116,44 +117,71 @@
 
     function elementFromModel(model) {
       let element = document.createElement(model.tag);
+      let model_id = model.attributes['data-purly-model'];
       registerAttributes(element, model.attributes);
       registerChildren(element, model.children ? model.children : []);
-      registerEvents(element, model.events)
+      registerEvents(element, model.events);
+      $(element).on('change', function(event) {
+        sendUpdate(model_id, {'attributes': {'value': element.value}});
+      });
       return element;
     }
-  });
 
-  function formEvent(model, type, data) {
-    return {
-      header: {
-        type: 'signal'
-      },
-      content: {
-        [model]: {
-          'type': type,
-          [type]: data
+    function formEvent(model, type, data) {
+      toSend.push({
+        header: {
+          type: 'signal'
+        },
+        content: {
+          [model]: {
+            'type': type,
+            [type]: data
+          }
         }
+      });
+    }
+
+    function sendUpdate(model, content) {
+      content = {[model]: content};
+      let diff = mergeDeepDifference(models, content);
+      if (diff) {
+        toSend.push({
+          header: {
+            type: 'update'
+          },
+          content: diff
+        });
       }
-    };
-  }
+    }
+  });
 
   function isObject(item) {
     return (item && typeof item === 'object' && !Array.isArray(item));
   }
 
-  function mergeDeep(target, source) {
+  function mergeDeepDifference(target, source, difference) {
+    if (difference == undefined) {
+      difference = {};
+    }
     if (isObject(target) && isObject(source)) {
       for (const key in source) {
         if (isObject(source[key])) {
-          if (!target[key]) Object.assign(target, { [key]: {} });
-          mergeDeep(target[key], source[key]);
+          if (!target[key]) {
+            Object.assign(target, { [key]: {} });
+            Object.assign(difference, { [key]: {} })
+          }
+          difference[key] = mergeDeepDifference(target[key], source[key]);
         } else if (source[key] != null){
-          Object.assign(target, { [key]: source[key] });
+          if (source[key] != target[key]) {
+            Object.assign(target, { [key]: source[key] });
+            Object.assign(difference, { [key]: source[key] })
+          }
         } else {
           delete target[key]
         }
       }
     }
-    return target
+    return difference
   }
+
 </script>

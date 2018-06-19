@@ -117,6 +117,13 @@ class Layout(Client):
     def _capture_elements(self, parent, elements):
         self._update_children(parent, elements)
 
+    def _on_update(self, msg):
+        for model, update in msg.items():
+            if model in self._contains:
+                element = self._contains[model]
+                if 'attributes' in update:
+                    element.attributes.update(update['attributes'])
+
     def _on_signal(self, msg):
         for model, event in msg.items():
             if model in self._contains:

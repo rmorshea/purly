@@ -3,7 +3,7 @@
 
 # Purly
 
-A networked framework for controlling the web.
+A networked framework for controlling the web with Python.
 
 
 # Install
