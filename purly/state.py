@@ -24,7 +24,7 @@ class Machine(Server):
             protocol = 'wss'
         else:
             protocol = 'ws'
-        uri = f"'{protocol}://' + document.domain + ':' + location.port + '/{model}/stream'"
+        uri = f"'{protocol}://' + document.location.hostname + document.location.pathname + '/{model}/stream'"
         return response.html(html % (model, load_static_html(uri=uri)))
 
     @rule('route', '/<model>/state')
