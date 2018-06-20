@@ -3,14 +3,13 @@ from weakref import WeakValueDictionary
 
 from .model import Client
 from .html import HTML
-from .display import output
 from .utils import finalize
 
 
 class Layout(Client):
 
-    def __init__(self, uri):
-        super().__init__(uri)
+    def __init__(self, url):
+        super().__init__(url)
         self.children = mvc.List()
         self._contains = WeakValueDictionary()
 
@@ -59,7 +58,7 @@ class Layout(Client):
             if isinstance(c, HTML):
                 serialized.append({
                     'type': 'ref',
-                    'ref': c.attributes['data-purly-model'],
+                    'ref': c.attributes['key'],
                 })
             else:
                 serialized.append({
@@ -69,7 +68,7 @@ class Layout(Client):
         self._send({model: {'children': serialized}}, {'type': 'update'})
 
     def _update_initialize(self, element):
-        model = element.attributes['data-purly-model']
+        model = element.attributes['key']
         self._send({model: {'tag': element.tag}}, {'type': 'update'})
 
     def _update_attributes(self, model, attributes):
@@ -82,26 +81,36 @@ class Layout(Client):
         self._send({model: {'events': update}}, {'type': 'update'})
 
     def _capture_element(self, element):
-        model = element.attributes['data-purly-model']
+        model = element.attributes['key']
 
         if model not in self._contains:
 
             @mvc.view(element.attributes)
-            def capture_attributes(change):
+            def capture_attributes(changes):
                 attributes = {}
-                for c in change:
+                for c in changes:
                     new = c['new']
                     if new is mvc.Undefined:
                         new = None
                     attributes[c['key']] = new
                 self._update_attributes(model, attributes)
 
+            @mvc.view(element.style)
+            def capture_style(changes):
+                style = {}
+                for c in changes:
+                    new = c['new']
+                    if new is mvc.Undefined:
+                        new = None
+                    style[c['key']] = new
+                self._update_attributes(model, {'style': style})
+
             @mvc.view(element.children)
-            def capture_children(change):
+            def capture_children(changes):
                 self._capture_elements(model, element.children)
 
             @mvc.view(element.events)
-            def capture_events(change):
+            def capture_events(changes):
                 self._update_events(model, element.events)
 
             @finalize(element)
@@ -131,4 +140,14 @@ class Layout(Client):
 
     def _repr_html_(self):
         """Rich display output for ipython."""
-        return output(self._url).data
+        uri = self._url.rsplit('/', 1)[0].split(':', 1)[1]
+        url = 'http:' + uri + '/index'
+        form = """
+        <script>
+          function resizeIframe(obj) {
+            obj.style.height = obj.contentWindow.document.body.scrollHeight + 'px';
+          }
+        </script>
+        <iframe src=%r frameBorder="0" scrolling="no" onload="resizeIframe(this)"></iframe>
+        """
+        return form % url

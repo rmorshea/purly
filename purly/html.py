@@ -6,24 +6,14 @@ from spectate import mvc
 class HTML:
 
     def __init__(self, tag, *children, **attributes):
-        self.tag = tag
-        self.style = mvc.Dict(attributes.pop('style', {}))
-        attributes['style'] = '; '.join(
-            '%s:%s' % (k.replace('_', '-'), v)
-            for k, v in self.style.items()
-        )
-        attributes['data-purly-model'] = uuid4().hex
+        attributes['key'] = uuid4().hex
+        style = attributes.pop('style', {})
 
+        self.tag = tag
+        self.style = attributes['style'] = mvc.Dict(style)
         self.attributes = mvc.Dict(attributes)
         self.children = mvc.List(children)
         self.events = mvc.Dict()
-
-        @mvc.view(self.style)
-        def _capture_style(change):
-            self.attributes['style'] = '; '.join(
-                '%s:%s' % (k.replace('_', '-'), v)
-                for k, v in self.style.items()
-            )
 
     def on(self, event, *data):
         def setup(function):

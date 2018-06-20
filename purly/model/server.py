@@ -1,5 +1,4 @@
 import json
-import time
 import types
 import asyncio
 from uuid import uuid4
@@ -47,7 +46,7 @@ class Server:
     def __init_subclass__(cls):
         cls._rules = cls._rules.copy()
 
-    def __init__(self, rate=0.02):
+    def __init__(self):
         self.server = Sanic()
         for name in self._rules:
             register = getattr(self, name)
@@ -55,7 +54,6 @@ class Server:
         self._connections = {}
         self._updates = {}
         self._models = {}
-        self._rate = rate
 
     def run(self, *args, **kwargs):
         self.server.run(*args, **kwargs)
@@ -68,7 +66,7 @@ class Server:
             daemon=True,
         ).start()
 
-    @rule('websocket', '/<model>/stream')
+    @rule('websocket', '/model/<model>/stream')
     async def _stream(self, request, socket, model):
         conn = uuid4().hex
         self._connections.setdefault(model, []).append(conn)
@@ -78,18 +76,21 @@ class Server:
         self._updates[conn] = [initialize]
         # keep a reference to the model alive.
         try:
+            empty = 0
             while True:
-                start = time.time()
                 send = self._sync(conn)
                 await socket.send(json.dumps(send))
                 recv = json.loads(await socket.recv())
                 if recv:
                     self._load(conn, model, recv)
                 # throttle connections with few udpates
-                stop = time.time()
-                elapsed = stop - start
-                if elapsed < self._rate:
-                    await asyncio.sleep(self._rate - elapsed)
+                if not send and not recv:
+                    if empty > 2000:
+                        await asyncio.sleep(0.5)
+                    else:
+                        empty += 1
+                else:
+                    empty = 0
         except ConnectionClosed:
             pass
         except Exception:
