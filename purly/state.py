@@ -1,32 +1,22 @@
+import os
 from sanic import response
 
 from .model import Server, rule
-from .utils import load_static_html
+
+HERE = os.path.dirname(__file__)
+REACT = os.path.join(HERE, 'react')
 
 
 class Machine(Server):
 
-    @rule('route', '/<model>/index')
-    async def _index(self, request, model):
-        html = '''
-        <!DOCTYPE html>
-        <html>
-            <head>
-                <meta charset="UTF-8">
-                <title>%s</title>
-            </head>
-            <body>
-                %s
-            </body>
-        </html>
-        '''
-        if 'https' in (request.scheme, request.headers.get('x-scheme')):
-            protocol = 'wss'
-        else:
-            protocol = 'ws'
-        uri = f"'{protocol}://' + document.domain + ':' + location.port + '/{model}/stream'"
-        return response.html(html % (model, load_static_html(uri=uri)))
+    _static = rule('static', '/static', os.path.join(REACT, 'build', 'static'))
+    _public = rule('static', '/public', os.path.join(REACT, 'public'))
 
-    @rule('route', '/<model>/state')
+    @rule('route', '/model/<model>/index')
+    async def _index(self, request, model):
+        with open(os.path.join(REACT, 'build', 'index.html')) as f:
+            return response.html(f.read())
+
+    @rule('route', '/model/<model>/state')
     async def _state(self, request, model):
         return response.json(self._models[model])

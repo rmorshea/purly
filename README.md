@@ -83,11 +83,11 @@ Element = {
     str,
     # Any arbitrary string.
     {'ref': str},
-    # An object where the key "ref" refers to the "data-purly-model" attribute.
+    # An object where the key "ref" refers to the "key" attribute.
     ...
   ]
   attributes: {
-    'data-purly-model': id,
+    'key': id,
     # The id that uniquely identifies this Element.
     'attr': value,
     # Map any attribute name to any JSON serializable value.
@@ -107,8 +107,8 @@ Element = {
 The following HTML
 
 ```html
-<div data-purly-model='root'>
-  <h1 data-purly-model='abc123'>Hello World!</p>
+<div key='root'>
+  <h1 key='abc123'>Hello World!</p>
 <div>
 ```
 
@@ -122,7 +122,7 @@ Would be communicate with the following Purly model:
       {'ref': 'abc123'},
     ]
     attributes: {
-      'data-purly-model': 'root'
+      'key': 'root'
     }
     events: []
   },
@@ -132,7 +132,7 @@ Would be communicate with the following Purly model:
       'Hello World!'
     ],
     attributes: {
-      'data-purly-model',
+      'key',
     },
     events: []
   }

@@ -12,18 +12,15 @@ from .utils import diff
 
 class rule:
 
-    def __new__(cls, *args, **kwargs):
-        new = super().__new__
-        def __init__(function):
-            self = new(cls)
-            self.__init__(function, *args, **kwargs)
-            return self
-        return __init__
+    function = None
 
-    def __init__(self, function, *args, **kwargs):
-        self.function = function
+    def __init__(self, *args, **kwargs):
         self.name, *self.args = args
         self.kwargs = kwargs
+
+    def __call__(self, function):
+        self.function = function
+        return self
 
     def __set_name__(self, cls, name):
         cls._rules.add(name)
@@ -32,11 +29,14 @@ class rule:
         if obj is None:
             return self
         else:
-            return types.MethodType(self.__call__, obj)
+            return types.MethodType(self.setup, obj)
 
-    def __call__(self, obj, app):
-        method = types.MethodType(self.function, obj)
-        getattr(app, self.name)(*self.args, **self.kwargs)(method)
+    def setup(self, obj, app):
+        if self.function is not None:
+            method = types.MethodType(self.function, obj)
+            getattr(app, self.name)(*self.args, **self.kwargs)(method)
+        else:
+            return getattr(app, self.name)(*self.args, **self.kwargs)
 
 
 class Server:
@@ -66,7 +66,7 @@ class Server:
             daemon=True,
         ).start()
 
-    @rule('websocket', '<model>/stream')
+    @rule('websocket', '/model/<model>/stream')
     async def _stream(self, request, socket, model):
         conn = uuid4().hex
         self._connections.setdefault(model, []).append(conn)
