@@ -26,11 +26,5 @@ socket.onmessage = function onMessage(event) {
   // send messages
   let msg = [...global.toSend];
   global.toSend.splice(0, msg.length);
-  await sleep(30);
   socket.send(JSON.stringify(msg));
-}
-
-
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
 }
