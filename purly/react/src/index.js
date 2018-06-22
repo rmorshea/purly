@@ -1,23 +1,36 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import Layout from './components/Layout';
+import Layout from './Layout';
 import deepmerge from 'deepmerge'
+import global from './global'
 
-var models = {};
-const socket = new WebSocket("ws://127.0.0.1:8000/model/example-model/stream");
+const uri = document.location.hostname + ":" + document.location.port;
+var url = (uri + document.location.pathname).split("/");
+url[url.length - 1] = "stream"
+const socket = new WebSocket("ws://" + url.join('/'));
 const mount = document.getElementById('react-mount');
 
 socket.onmessage = function onMessage(event) {
   let diffs = 0;
   JSON.parse(event.data).forEach(msg => {
     if ( msg.header.type === "update" ) {
-      models = deepmerge(models, msg.content);
+      global.models = deepmerge(global.models, msg.content);
       diffs ++;
     }
   })
-  if ( diffs && models.root ) {
-    ReactDOM.render(<Layout {...models} />, mount);
+  if ( diffs && global.models.root ) {
+    // Only render if the root node has been defined.
+    ReactDOM.render(<Layout/>, mount);
   }
-  socket.send("[]");
+  // send messages
+  let msg = [...global.toSend];
+  global.toSend.splice(0, msg.length);
+  await sleep(30);
+  socket.send(JSON.stringify(msg));
+}
+
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }

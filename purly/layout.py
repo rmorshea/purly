@@ -1,3 +1,4 @@
+from copy import deepcopy
 from spectate import mvc
 from weakref import WeakValueDictionary
 
@@ -72,13 +73,7 @@ class Layout(Client):
         self._send({model: {'tag': element.tag}}, {'type': 'update'})
 
     def _update_attributes(self, model, attributes):
-        self._send({model: {'attributes': attributes}}, {'type': 'update'})
-
-    def _update_events(self, model, events):
-        update = {}
-        for etype, (_, data) in events.items():
-            update[etype] = data
-        self._send({model: {'events': update}}, {'type': 'update'})
+        self._send({model: {'attributes': deepcopy(attributes)}}, {'type': 'update'})
 
     def _capture_element(self, element):
         model = element.attributes['key']
@@ -99,19 +94,15 @@ class Layout(Client):
             def capture_style(changes):
                 style = {}
                 for c in changes:
-                    new = c['new']
+                    new = c.new
                     if new is mvc.Undefined:
                         new = None
-                    style[c['key']] = new
+                    style[c.key] = new
                 self._update_attributes(model, {'style': style})
 
             @mvc.view(element.children)
             def capture_children(changes):
                 self._capture_elements(model, element.children)
-
-            @mvc.view(element.events)
-            def capture_events(changes):
-                self._update_events(model, element.events)
 
             @finalize(element)
             def _sync_delete():
@@ -119,8 +110,7 @@ class Layout(Client):
 
             self._contains[model] = element
             self._update_initialize(element)
-            self._update_events(model, element.events)
-            self._update_attributes(model, element.attributes.copy())
+            self._update_attributes(model, element.attributes)
             self._capture_elements(model, element.children)
 
     def _capture_elements(self, parent, elements):

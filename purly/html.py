@@ -1,4 +1,5 @@
 import json
+import inspect
 from uuid import uuid4
 from spectate import mvc
 
@@ -13,19 +14,27 @@ class HTML:
         self.style = attributes['style'] = mvc.Dict(style)
         self.attributes = mvc.Dict(attributes)
         self.children = mvc.List(children)
-        self.events = mvc.Dict()
+        self.callbacks = {}
 
-    def on(self, event, *data):
+    def on(self, event, *update):
         def setup(function):
-            self.events[event] = (function, data)
+            uuid = uuid4().hex
+            if not callable(function):
+                raise TypeError('Expected a callable object.')
+            keys = tuple(inspect.signature(function).parameters)
+            self.attributes['on' + event] = {
+                'callback': uuid,
+                'keys': keys,
+                'update': update,
+            }
+            self.callbacks[uuid] = function
             return function
         return setup
 
     def trigger(self, event):
-        etype = event['type']
-        if etype in self.events:
-            function, _ = self.events[etype]
-            function(event[etype])
+        cb = event['callback']
+        if cb in self.callbacks:
+            self.callbacks[cb](event['event'])
 
     def __eq__(self, other):
         return (
