@@ -2,4 +2,4 @@
 
 jupyter serverextension enable  --py nbserverproxy --sys-prefix
 python setup.py install
-cd purly/react && npm install && PUBLIC_URL="https://hub.mybinder.org/${JUPYTERHUB_OAUTH_CALLBACK_URL::-14}" npm run build && cd ../../;
+cd purly/react && npm install && PUBLIC_URL="${JUPYTERHUB_OAUTH_CALLBACK_URL::-15}" npm run build && cd ../../;
