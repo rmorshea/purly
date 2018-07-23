@@ -33,8 +33,8 @@ function PurlyElement(model) {
       if (property.startsWith('on') && attributes[property].callback) {
         let prop = attributes[property];
         attributes[property] = (function(event) {
-          global.toSend.push(formUpdate(key, prop.update, event.target));
-          global.toSend.push(formEvent(key, prop.callback, prop.keys, event));
+          sendUpdate(key, prop.update, event.target);
+          sendEvent(key, prop.callback, prop.keys, event);
         });
       }
       propertyNames.push(property);
@@ -48,12 +48,12 @@ function PurlyElement(model) {
   return component;
 }
 
-function formEvent(key, callback, keys, event) {
+function sendEvent(key, callback, keys, event) {
   let content = {};
   keys.forEach(k => {
     content[k] = event[k];
   })
-  return {
+  global.toSend.push({
     header: {
       type: 'signal'
     },
@@ -63,16 +63,16 @@ function formEvent(key, callback, keys, event) {
         event: content
       }
     }
-  };
+  });
 }
 
-function formUpdate(key, update, state) {
+function sendUpdate(key, update, state) {
   if (update.length) {
     let content = {}
     update.forEach(k => {
       content[k] = state[k];
     })
-    return {
+    global.toSend.push({
       header: {
         type: 'update'
       },
@@ -81,7 +81,7 @@ function formUpdate(key, update, state) {
           attributes: content
         }
       }
-    }
+    });
   }
 }
 
