@@ -24,8 +24,10 @@ class Machine(Server):
             protocol = 'wss'
         else:
             protocol = 'ws'
-        uri = f"'{protocol}://' + document.location.hostname + document.location.pathname + '/{model}/stream'"
-        return response.html(html % (model, load_static_html(uri=uri)))
+        return response.html(html % (model, load_static_html(uri=(
+            f"'{protocol}://' + document.location.hostname + ':' "
+            "+ window.location.port + document.location.pathname"
+        ))))
 
     @rule('route', '/<model>/state')
     async def _state(self, request, model):

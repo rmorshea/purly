@@ -1,12 +1,19 @@
 <div data-purly-model="root"></div>
 <script type="text/JavaScript">
 
+  String.prototype.rsplit = function(sep, maxsplit) {
+    var split = this.split(sep);
+    return maxsplit ? [ split.slice(0, -maxsplit).join(sep) ].concat(split.slice(-maxsplit)) : split;
+  }
+
   $(document).ready(function() {
     let models;
     let toSend = [];
     // inject the url for the socket.
     // via python string formatting.
-    let socket = new WebSocket({{uri}});
+    let uri = {{uri}};
+    uri = uri.rsplit('/', 1)[0] + "/stream";
+    let socket = new WebSocket(uri);
 
     socket.onmessage = function onFirstMessage(event) {
       messages = JSON.parse(event.data);
@@ -127,7 +134,7 @@
       return element;
     }
 
-    function formEvent(model, type, data) {
+    function sendEvent(model, type, data) {
       toSend.push({
         header: {
           type: 'signal'
