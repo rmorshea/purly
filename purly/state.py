@@ -26,7 +26,7 @@ class Machine(Server):
             protocol = 'ws'
         return response.html(html % (model, load_static_html(uri=(
             f"'{protocol}://' + document.location.hostname + ':' "
-            "+ window.location.port + document.location.pathname"
+            "+ document.location.port + document.location.pathname"
         ))))
 
     @rule('route', '/<model>/state')
