@@ -1,4 +1,5 @@
 import json
+import time
 import types
 import asyncio
 from uuid import uuid4
@@ -12,18 +13,15 @@ from .utils import diff
 
 class rule:
 
-    def __new__(cls, *args, **kwargs):
-        new = super().__new__
-        def __init__(function):
-            self = new(cls)
-            self.__init__(function, *args, **kwargs)
-            return self
-        return __init__
+    function = None
 
-    def __init__(self, function, *args, **kwargs):
-        self.function = function
+    def __init__(self, *args, **kwargs):
         self.name, *self.args = args
         self.kwargs = kwargs
+
+    def __call__(self, function):
+        self.function = function
+        return self
 
     def __set_name__(self, cls, name):
         cls._rules.add(name)
@@ -32,11 +30,14 @@ class rule:
         if obj is None:
             return self
         else:
-            return types.MethodType(self.__call__, obj)
+            return types.MethodType(self.setup, obj)
 
-    def __call__(self, obj, app):
-        method = types.MethodType(self.function, obj)
-        getattr(app, self.name)(*self.args, **self.kwargs)(method)
+    def setup(self, obj, app):
+        if self.function is not None:
+            method = types.MethodType(self.function, obj)
+            getattr(app, self.name)(*self.args, **self.kwargs)(method)
+        else:
+            return getattr(app, self.name)(*self.args, **self.kwargs)
 
 
 class Server:
@@ -46,7 +47,7 @@ class Server:
     def __init_subclass__(cls):
         cls._rules = cls._rules.copy()
 
-    def __init__(self):
+    def __init__(self, rate=0.02):
         self.server = Sanic()
         for name in self._rules:
             register = getattr(self, name)
@@ -54,6 +55,7 @@ class Server:
         self._connections = {}
         self._updates = {}
         self._models = {}
+        self._rate = rate
 
     def run(self, *args, **kwargs):
         self.server.run(*args, **kwargs)
@@ -66,7 +68,7 @@ class Server:
             daemon=True,
         ).start()
 
-    @rule('websocket', '<model>/stream')
+    @rule('websocket', '/<model>/stream')
     async def _stream(self, request, socket, model):
         conn = uuid4().hex
         self._connections.setdefault(model, []).append(conn)
@@ -76,21 +78,18 @@ class Server:
         self._updates[conn] = [initialize]
         # keep a reference to the model alive.
         try:
-            empty = 0
             while True:
+                start = time.time()
                 send = self._sync(conn)
                 await socket.send(json.dumps(send))
                 recv = json.loads(await socket.recv())
                 if recv:
                     self._load(conn, model, recv)
                 # throttle connections with few udpates
-                if not send and not recv:
-                    if empty > 2000:
-                        await asyncio.sleep(0.5)
-                    else:
-                        empty += 1
-                else:
-                    empty = 0
+                stop = time.time()
+                elapsed = stop - start
+                if elapsed < self._rate:
+                    await asyncio.sleep(self._rate - elapsed)
         except ConnectionClosed:
             pass
         except Exception:
