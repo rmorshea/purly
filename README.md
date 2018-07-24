@@ -8,7 +8,7 @@ Control the web with Python :snake:
 
 # Install
 
-Install a dev version (`pip install` is coming soon):
+Install a dev version (a pypi version is coming soon):
 
 ```bash
 git clone https://github.com/rmorshea/purly && cd purly/ && pip install -e . -r requirements.txt
