@@ -8,4 +8,4 @@ PUBLIC_URL="${JUPYTERHUB_OAUTH_CALLBACK_URL::-15}"
 npm run build
 cd ../../
 
-python setup.py install
+pip install .
