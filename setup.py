@@ -61,7 +61,7 @@ def package_files(*path_to_files):
     return paths
 
 
-static_files = package_files(root, 'react')
+static_files = package_files(root, 'react/build')
 
 #-----------------------------------------------------------------------------
 # Install It
