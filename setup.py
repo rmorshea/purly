@@ -72,6 +72,7 @@ if __name__ == '__main__':
         name=name,
         version=version,
         packages=find_packages(),
+        include_package_data=True,
         package_data={'': static_files},
         description="Control the web with Python",
         long_description=long_description,
