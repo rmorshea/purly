@@ -34,7 +34,7 @@ class HTML:
     def trigger(self, event):
         cb = event['callback']
         if cb in self.callbacks:
-            self.callbacks[cb](event['event'])
+            self.callbacks[cb](**event['event'])
 
     def __eq__(self, other):
         return (
