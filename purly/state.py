@@ -9,7 +9,7 @@ REACT = os.path.join(HERE, 'react')
 
 class Machine(Server):
 
-    _static = rule('static', '/hub/static', os.path.join(REACT, 'build', 'static'))
+    _static = rule('static', '/static', os.path.join(REACT, 'build', 'static'))
     _public = rule('static', '/public', os.path.join(REACT, 'public'))
 
     @rule('route', '/model/<model>/index')
