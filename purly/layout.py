@@ -131,7 +131,12 @@ class Layout(Client):
     def _repr_html_(self):
         """Rich display output for ipython."""
         uri = self._url.rsplit('/', 1)[0].split(':', 1)[1]
-        url = 'http:' + uri + '/index'
+        socket_protocol = self._url.split(':', 1)[0]
+        if socket_protocol == "wss":
+            http_protocol = "https"
+        else:
+            http_protocol = "http"
+        url = http_protocol + ':' + uri + '/index'
         form = """
         <script>
           function resizeIframe(obj) {
