@@ -9,13 +9,10 @@ REACT = os.path.join(HERE, 'react')
 
 class Machine(Server):
 
-    _static = rule('static', '/static', os.path.join(REACT, 'build', 'static'))
-    _public = rule('static', '/public', os.path.join(REACT, 'public'))
-
-    @rule('route', '/model/<model>/index')
-    async def _index(self, request, model):
-        with open(os.path.join(REACT, 'build', 'index.html')) as f:
-            return response.html(f.read())
+    @rule('route', '/model/<model>/assets/<path:path>')
+    async def _index(self, request, model, path):
+        absolute = os.path.join(REACT, 'build', *path.split('\n'))
+        return await response.file(absolute)
 
     @rule('route', '/model/<model>/state')
     async def _state(self, request, model):
