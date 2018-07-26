@@ -136,7 +136,7 @@ class Layout(Client):
             http_protocol = "https"
         else:
             http_protocol = "http"
-        url = http_protocol + ':' + uri + '/index'
+        url = http_protocol + ':' + uri + '/assets/index.html'
         form = """
         <script>
           function resizeIframe(obj) {

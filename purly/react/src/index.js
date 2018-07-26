@@ -6,8 +6,9 @@ import deepmerge from 'deepmerge'
 import global from './global'
 
 const uri = document.location.hostname + ":" + document.location.port;
-var url = (uri + document.location.pathname).split("/");
+var url = (uri + document.location.pathname).split("/").slice(0, -1);
 url[url.length - 1] = "stream"
+console.log(url)
 const socket = new WebSocket("ws://" + url.join('/'));
 const mount = document.getElementById('react-mount');
 
