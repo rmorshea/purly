@@ -143,6 +143,6 @@ class Layout(Client):
             obj.style.height = obj.contentWindow.document.body.scrollHeight + 'px';
           }
         </script>
-        <iframe src=%r frameBorder="0" scrolling="no" onload="resizeIframe(this)"></iframe>
+        <iframe src=%r frameBorder="0"></iframe>
         """
         return form % url
