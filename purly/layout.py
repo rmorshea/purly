@@ -137,12 +137,5 @@ class Layout(Client):
         else:
             http_protocol = "http"
         url = http_protocol + ':' + uri + '/assets/index.html'
-        form = """
-        <script>
-          function resizeIframe(obj) {
-            obj.style.height = obj.contentWindow.document.body.scrollHeight + 'px';
-          }
-        </script>
-        <iframe src=%r frameBorder="0"></iframe>
-        """
+        form = '<iframe src=%r frameBorder="0"></iframe>'
         return form % url
