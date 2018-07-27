@@ -3,12 +3,12 @@
 
 # Purly
 
-A networked framework for controlling the web with Python.
+Control the web with Python :snake:
 
 
 # Install
 
-Install a dev version (version to pypi coming soon):
+Install a dev version (a pypi version is coming soon):
 
 ```bash
 git clone https://github.com/rmorshea/purly && cd purly/ && pip install -e . -r requirements.txt
@@ -17,28 +17,27 @@ git clone https://github.com/rmorshea/purly && cd purly/ && pip install -e . -r 
 
 # Getting Started
 
-Run `python run.py` where the file `run.py` contains the following:
+Run the following snippet of code, and then navigate to http://127.0.0.1:8000/model/index.
 
 ```python
 import purly
 
-purly.state.Machine().run()
-```
-
-Open a your browser and navigate to http://127.0.0.1:8000/model before continuing.
-
-Now you can open up a Python interpreter window and run the following:
-
-```python
+# Prepare your layout
+purly.state.Machine().run(debug=False)
 layout = purly.Layout('ws://127.0.0.1:8000/model/stream')
 
+# create your HTML
 div = layout.html('div')
 div.style.update(height='20px', width='20px', background_color='coral')
+
+# add it to the layout
 layout.children.append(div)
+
+# and sync it!
 layout.sync()
 ```
 
-You should now see that a div has magically appeared in the browser page you opened!
+Now your creation should have magically appeared in the browser page you opened!
 
 ![div with some styling](https://raw.githubusercontent.com/rmorshea/purly/master/docs/getting-started-div.png)
 
@@ -159,7 +158,7 @@ The Purly model server sends and receives JSON serializable arrays which contain
 There are two types of messages - Updates and Signals - however both conform to the following format.
 
 ```python
-{
+Message = {
   "header": {
     "type": "signal" or "update",
     # Message type (indicates the kind of content).
