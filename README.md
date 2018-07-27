@@ -76,7 +76,8 @@ Model = {
 
 ```python
 Element = {
-  tag: str# Standard HTML tags like h1, table, div, etc.
+  tag: str
+  # Standard HTML tags like h1, table, div, etc.
   children: [
     str,
     # Any arbitrary string.
