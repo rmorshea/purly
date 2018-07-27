@@ -1,1 +1,12 @@
-jupyter serverextension enable  --py nbserverproxy --sys-prefix
+#!/bin/bash
+
+jupyter serverextension enable --py nbserverproxy --sys-prefix
+
+cd purly/react
+npm install
+PUBLIC_URL="${JUPYTERHUB_OAUTH_CALLBACK_URL::-15}"
+npm run build
+cd ../../
+
+pip install --upgrade pip
+pip install .

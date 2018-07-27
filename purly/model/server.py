@@ -47,15 +47,15 @@ class Server:
     def __init_subclass__(cls):
         cls._rules = cls._rules.copy()
 
-    def __init__(self, rate=0.02):
+    def __init__(self, refresh=25):
+        self._models = {}
+        self._updates = {}
+        self._connections = {}
+        self._refresh_rate = 0 if refresh is None else (1 / refresh)
         self.server = Sanic()
         for name in self._rules:
             register = getattr(self, name)
             register(self.server)
-        self._connections = {}
-        self._updates = {}
-        self._models = {}
-        self._rate = rate
 
     def run(self, *args, **kwargs):
         self.server.run(*args, **kwargs)
@@ -68,7 +68,7 @@ class Server:
             daemon=True,
         ).start()
 
-    @rule('websocket', '/<model>/stream')
+    @rule('websocket', '/model/<model>/stream')
     async def _stream(self, request, socket, model):
         conn = uuid4().hex
         self._connections.setdefault(model, []).append(conn)
@@ -88,8 +88,8 @@ class Server:
                 # throttle connections with few udpates
                 stop = time.time()
                 elapsed = stop - start
-                if elapsed < self._rate:
-                    await asyncio.sleep(self._rate - elapsed)
+                if elapsed < self._refresh_rate:
+                    await asyncio.sleep(self._refresh_rate - elapsed)
         except ConnectionClosed:
             pass
         except Exception:

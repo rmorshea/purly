@@ -1,2 +1,1 @@
 nbserverproxy==0.8.3
-git+https://github.com/rmorshea/purly@master

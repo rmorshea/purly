@@ -1,16 +1,16 @@
+from copy import deepcopy
 from spectate import mvc
 from weakref import WeakValueDictionary
 
 from .model import Client
 from .html import HTML
-from .display import output
 from .utils import finalize
 
 
 class Layout(Client):
 
-    def __init__(self, uri):
-        super().__init__(uri)
+    def __init__(self, url):
+        super().__init__(url)
         self.children = mvc.List()
         self._contains = WeakValueDictionary()
 
@@ -59,7 +59,7 @@ class Layout(Client):
             if isinstance(c, HTML):
                 serialized.append({
                     'type': 'ref',
-                    'ref': c.attributes['data-purly-model'],
+                    'ref': c.attributes['key'],
                 })
             else:
                 serialized.append({
@@ -69,40 +69,40 @@ class Layout(Client):
         self._send({model: {'children': serialized}}, {'type': 'update'})
 
     def _update_initialize(self, element):
-        model = element.attributes['data-purly-model']
+        model = element.attributes['key']
         self._send({model: {'tag': element.tag}}, {'type': 'update'})
 
     def _update_attributes(self, model, attributes):
-        self._send({model: {'attributes': attributes}}, {'type': 'update'})
-
-    def _update_events(self, model, events):
-        update = {}
-        for etype, (_, data) in events.items():
-            update[etype] = data
-        self._send({model: {'events': update}}, {'type': 'update'})
+        self._send({model: {'attributes': deepcopy(attributes)}}, {'type': 'update'})
 
     def _capture_element(self, element):
-        model = element.attributes['data-purly-model']
+        model = element.attributes['key']
 
         if model not in self._contains:
 
             @mvc.view(element.attributes)
-            def capture_attributes(change):
+            def capture_attributes(changes):
                 attributes = {}
-                for c in change:
+                for c in changes:
                     new = c['new']
                     if new is mvc.Undefined:
                         new = None
                     attributes[c['key']] = new
                 self._update_attributes(model, attributes)
 
-            @mvc.view(element.children)
-            def capture_children(change):
-                self._capture_elements(model, element.children)
+            @mvc.view(element.style)
+            def capture_style(changes):
+                style = {}
+                for c in changes:
+                    new = c.new
+                    if new is mvc.Undefined:
+                        new = None
+                    style[c.key] = new
+                self._update_attributes(model, {'style': style})
 
-            @mvc.view(element.events)
-            def capture_events(change):
-                self._update_events(model, element.events)
+            @mvc.view(element.children)
+            def capture_children(changes):
+                self._capture_elements(model, element.children)
 
             @finalize(element)
             def _sync_delete():
@@ -110,8 +110,7 @@ class Layout(Client):
 
             self._contains[model] = element
             self._update_initialize(element)
-            self._update_events(model, element.events)
-            self._update_attributes(model, element.attributes.copy())
+            self._update_attributes(model, element.attributes)
             self._capture_elements(model, element.children)
 
     def _capture_elements(self, parent, elements):
@@ -131,4 +130,12 @@ class Layout(Client):
 
     def _repr_html_(self):
         """Rich display output for ipython."""
-        return output(self._url).data
+        uri = self._url.rsplit('/', 1)[0].split(':', 1)[1]
+        socket_protocol = self._url.split(':', 1)[0]
+        if socket_protocol == "wss":
+            http_protocol = "https"
+        else:
+            http_protocol = "http"
+        url = http_protocol + ':' + uri + '/assets/index.html'
+        form = '<iframe src=%r frameBorder="0"></iframe>'
+        return form % url

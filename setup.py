@@ -49,21 +49,6 @@ with open(os.path.join(here, 'README.md')) as f:
     long_description = f.read()
 
 #-----------------------------------------------------------------------------
-# Static Files
-#-----------------------------------------------------------------------------
-
-def package_files(*path_to_files):
-    directory = os.path.join(*path_to_files)
-    paths = []
-    for (path, directories, filenames) in os.walk(directory):
-        for filename in filenames:
-            paths.append(os.path.join('..', path, filename))
-    return paths
-
-
-static_files = package_files(root, 'static')
-
-#-----------------------------------------------------------------------------
 # Install It
 #-----------------------------------------------------------------------------
 
@@ -72,7 +57,7 @@ if __name__ == '__main__':
         name=name,
         version=version,
         packages=find_packages(),
-        package_data={'': static_files},
+        include_package_data=True,
         description="Control the web with Python",
         long_description=long_description,
         long_description_content_type='text/markdown',
