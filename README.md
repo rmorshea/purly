@@ -76,27 +76,29 @@ Model = {
 
 ```python
 Element = {
-  tag: str
-  # Standard HTML tags like h1, table, div, etc.
+  tag: str# Standard HTML tags like h1, table, div, etc.
   children: [
     str,
     # Any arbitrary string.
     {'ref': str},
     # An object where the key "ref" refers to the "key" attribute.
     ...
-  ]
+  ],
   attributes: {
     'key': id,
     # The id that uniquely identifies this Element.
     'attr': value,
     # Map any attribute name to any JSON serializable value.
-    ...
+    'on<Event>': {
+      # Specify an event callback with an attribute of the form "on<Event>".
+      'callback': uuid,
+      # A unique identifier by which to refer to the callback function.
+      'keys': [...],
+      # Details of the event to pass on to the callback.
+      'update': [...]
+      # Any attributes that should be synced before the callback is triggered.
+    }
   }
-  events: [
-    str,
-    # A string indicating an event this Element reacts to.
-    ...
-  ]
 }
 ```
 
@@ -107,33 +109,32 @@ The following HTML
 
 ```html
 <div key='root'>
-  <h1 key='abc123'>Hello World!</p>
+  Make a selection:
+  <input type='text' key='abc123'></input>
 <div>
 ```
 
-Would be communicate with the following Purly model:
+would be communicated with the following Purly model:
 
 ```python
 {
   'root': {
     tag: 'div',
     elements: [
+      'Make a selection:'
       {'ref': 'abc123'},
     ]
     attributes: {
       'key': 'root'
     }
-    events: []
   },
   'abc123': {
-    tag: 'h1',
-    elements: [
-      'Hello World!'
-    ],
+    tag: 'input',
+    elements: [],
     attributes: {
-      'key',
+      'key': 'abc123',
+      'type': 'text',
     },
-    events: []
   }
 }
 ```

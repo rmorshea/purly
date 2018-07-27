@@ -8,4 +8,5 @@ PUBLIC_URL="${JUPYTERHUB_OAUTH_CALLBACK_URL::-15}"
 npm run build
 cd ../../
 
+pip install --upgrade pip
 pip install .
