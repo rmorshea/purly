@@ -1,1 +1,2 @@
 graft purly/react/build
+include LICENSE
