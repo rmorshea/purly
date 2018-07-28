@@ -51,7 +51,7 @@ Purly's fundamental goal is to give Python as much control of a webpage as possi
 
 ![protocol](https://raw.githubusercontent.com/rmorshea/purly/master/docs/protocol/protocol.gif)
 
-Purly uses a web socket server to keep multiple concurrent clients in sync. The animation above shows 2 clients - a Python client pushing updates to a single Browser - however you could have more clients producing and / or consuming, model updates. Each client is associated with a single model (any JSON serializable object), however there can be multiple models that are stored on the server. Clients connect to a particular model by specifying its name in the socket route (e.g. `ws://host:port/<model-name>/stream`). Only clients that are connected to the same model communicate with each other via the server.
+Purly uses a web socket server to keep multiple concurrent clients in sync. The animation above shows 2 clients - a Python client pushing updates to a single Browser - however you could have more clients producing and / or consuming, model updates. Each client is associated with a single model (any JSON serializable object), however there can be multiple models that are stored on the server. Clients connect to a particular model by specifying its name in the socket route (e.g. `ws://host:port/model/<model-name>/stream`). Only clients that are connected to the same model communicate with each other via the server.
 
 
 ## Model Specification
@@ -119,7 +119,7 @@ would be communicated with the following Purly model:
 
 ```python
 {
-  'root': {
+  root: {
     tag: 'div',
     elements: [
       'Make a selection:'
@@ -129,7 +129,7 @@ would be communicated with the following Purly model:
       'key': 'root'
     }
   },
-  'abc123': {
+  abc123: {
     tag: 'input',
     elements: [],
     attributes: {
