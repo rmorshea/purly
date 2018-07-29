@@ -16,7 +16,7 @@ class Layout(Client):
 
         @mvc.view(self.children)
         def capture_elements(change):
-            self._capture_elements('root', self.children)
+            self._update_children('root', self.children)
 
     def html(self, tag, *children, **attributes):
         new = HTML(tag, *children, **attributes)
@@ -53,32 +53,40 @@ class Layout(Client):
                     self.children.extend(map(self.layout, children))
         return self
 
-    def _update_children(self, model, children):
+    def _update_children(self, parent_key, children):
         serialized = []
         for c in children:
             if isinstance(c, HTML):
+                c.attributes["parent_key"] = parent_key
                 serialized.append({
                     'type': 'ref',
                     'ref': c.attributes['key'],
                 })
             else:
-                serialized.append({
-                    'type': 'str',
-                    'str': str(c)
-                })
-        self._send({model: {'children': serialized}}, {'type': 'update'})
+                serialized.append(str(c))
+        self._send({parent_key: {'children': serialized}}, {'type': 'update'})
 
     def _update_initialize(self, element):
-        model = element.attributes['key']
-        self._send({model: {'tag': element.tag}}, {'type': 'update'})
+        key = element.attributes['key']
+        self._send({key: {'tagName': element.tag}}, {'type': 'update'})
 
-    def _update_attributes(self, model, attributes):
-        self._send({model: {'attributes': deepcopy(attributes)}}, {'type': 'update'})
+    def _update_attributes(self, key, attributes):
+        self._send({key: {'attributes': deepcopy(attributes)}}, {'type': 'update'})
+
+    def _update_propogate(self, key):
+        message = {}
+        while key not in (None, 'root'):
+            if key not in self._contains:
+                break
+            element = self._contains[key]
+            message[key] = {'signature': hex(hash(element))}
+            key = element.attributes["parent_key"]
+        self._send(message, {'type': 'update'})
 
     def _capture_element(self, element):
-        model = element.attributes['key']
+        key = element.attributes['key']
 
-        if model not in self._contains:
+        if key not in self._contains:
 
             @mvc.view(element.attributes)
             def capture_attributes(changes):
@@ -88,7 +96,8 @@ class Layout(Client):
                     if new is mvc.Undefined:
                         new = None
                     attributes[c['key']] = new
-                self._update_attributes(model, attributes)
+                self._update_attributes(key, attributes)
+                self._update_propogate(key)
 
             @mvc.view(element.style)
             def capture_style(changes):
@@ -98,35 +107,35 @@ class Layout(Client):
                     if new is mvc.Undefined:
                         new = None
                     style[c.key] = new
-                self._update_attributes(model, {'style': style})
+                self._update_attributes(key, {'style': style})
+                self._update_propogate(key)
 
             @mvc.view(element.children)
             def capture_children(changes):
-                self._capture_elements(model, element.children)
+                self._update_children(key, element.children)
+                self._update_propogate(key)
 
             @finalize(element)
             def _sync_delete():
-                self._send({model: None}, {'type': 'update'})
+                self._send({key: None}, {'type': 'update'})
+                self._update_propogate(key)
 
-            self._contains[model] = element
+            self._contains[key] = element
             self._update_initialize(element)
-            self._update_attributes(model, element.attributes)
-            self._capture_elements(model, element.children)
-
-    def _capture_elements(self, parent, elements):
-        self._update_children(parent, elements)
+            self._update_attributes(key, element.attributes)
+            self._update_children(key, element.children)
 
     def _on_update(self, msg):
-        for model, update in msg.items():
-            if model in self._contains:
-                element = self._contains[model]
+        for key, update in msg.items():
+            if key in self._contains:
+                element = self._contains[key]
                 if 'attributes' in update:
                     element.attributes.update(update['attributes'])
 
     def _on_signal(self, msg):
-        for model, event in msg.items():
-            if model in self._contains:
-                self._contains[model].trigger(event)
+        for key, event in msg.items():
+            if key in self._contains:
+                self._contains[key].trigger(event)
 
     def _repr_html_(self):
         """Rich display output for ipython."""

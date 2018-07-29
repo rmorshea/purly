@@ -68,7 +68,7 @@ To accomplish the goals defined above we propose a flat DOM model:
 Model = {
   id: Element,
   # Maps a uniquely identifiable string to an Element.
-  'root': Element,
+  root: Element,
   # The id "root" should always indicate the outermost Element.
   ...
 }
@@ -76,27 +76,31 @@ Model = {
 
 ```python
 Element = {
-  tag: str
+  tagName: string
   # Standard HTML tags like h1, table, div, etc.
+  signature: string
+  # The hash of this element attributes, and the hashes of its children.
   children: [
-    str,
+    string,
     # Any arbitrary string.
-    {'ref': str},
+    {type: 'ref', 'ref': string},
     # An object where the key "ref" refers to the "key" attribute.
     ...
   ],
   attributes: {
-    'key': id,
+    key: id,
     # The id that uniquely identifies this Element.
-    'attr': value,
+    parent_key: id
+    # The unique id of this element's parent.
+    attr: value,
     # Map any attribute name to any JSON serializable value.
-    'on<Event>': {
+    on<Event>: {
       # Specify an event callback with an attribute of the form "on<Event>".
-      'callback': uuid,
+      callback: uuid,
       # A unique identifier by which to refer to the callback function.
-      'keys': [...],
+      keys: [...],
       # Details of the event to pass on to the callback.
-      'update': [...]
+      update: [...]
       # Any attributes that should be synced before the callback is triggered.
     }
   }

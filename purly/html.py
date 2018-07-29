@@ -8,6 +8,7 @@ class HTML:
 
     def __init__(self, tag, *children, **attributes):
         attributes['key'] = uuid4().hex
+        attributes['parent_key'] = None
         style = attributes.pop('style', {})
 
         self.tag = tag
@@ -35,6 +36,18 @@ class HTML:
         cb = event['callback']
         if cb in self.callbacks:
             self.callbacks[cb](**event['event'])
+
+    def json(self):
+        return json.dumps({
+            'tagName': self.tag,
+            'attributes': json.dumps(self.attributes),
+            'children': [c.json() if isinstance(c, HTML) else c for c in self.children]
+        })
+
+    def __hash__(self):
+        attrs = json.dumps(self.attributes)
+        children = [c if isinstance(c, HTML) else str(c) for c in self.children]
+        return hash(''.join([self.tag, attrs, ''.join(map(hex, map(hash, children)))]))
 
     def __eq__(self, other):
         return (
