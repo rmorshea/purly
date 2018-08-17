@@ -8,10 +8,28 @@ Control the web with Python :snake:
 
 # Install
 
-Install a dev version (a pypi version is coming soon):
+To install a stable version:
 
 ```bash
-git clone https://github.com/rmorshea/purly && cd purly/ && pip install -e . -r requirements.txt
+pip install purly
+```
+
+To install a dev version:
+
+> be sure to install [`npm`](https://www.npmjs.com/get-npm) first!
+
+```bash
+# clone the repository
+git clone https://github.com/rmorshea/purly
+
+# build + install the react application
+cd purly/react
+npm install
+npm run build
+cd ../../
+
+# install the python package
+pip install -e .
 ```
 
 
