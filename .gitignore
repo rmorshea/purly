@@ -10,8 +10,8 @@ __pycache__/
 # Python - Distribution / packaging
 # ---------------------------------
 env/
-./dist/
-./build
+dist
+build
 eggs/
 lib/
 lib64/

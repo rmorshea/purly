@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os
 import sys
 from glob import glob
@@ -15,8 +17,8 @@ root = os.path.join(here, name)
 # Python Version Check
 #-----------------------------------------------------------------------------
 
-if sys.version_info < (3,6):
-    error = "ERROR: %s requires Python version 3.6 or above." % name
+if sys.version_info < (3,6) or sys.version_info >= (3, 7):
+    error = "ERROR: %s requires Python version 3.6." % name
     print(error, file=sys.stderr)
     sys.exit(1)
 
@@ -66,7 +68,7 @@ if __name__ == '__main__':
         url="https://github.com/rmorshea/purly",
         license='MIT',
         platforms="Linux, Mac OS X, Windows",
-        keywords=["interactive", "widgets", "DOM", "synchronization"],
+        keywords=["interactive", "widgets", "DOM", "synchronization", "React"],
         install_requires=requirements,
         classifiers=[
             'Intended Audience :: Developers',
