@@ -1,0 +1,16 @@
+{
+  "name": "root",
+  "private": true,
+  "devDependencies": {
+    "lerna": "^3.4.0"
+  },
+  "scripts": {
+    "start": "cd packages/purl-widget && ",
+    "build": "lerna run build"
+  },
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  }
+}

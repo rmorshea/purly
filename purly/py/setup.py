@@ -30,7 +30,7 @@ requirements = [
     'sanic',
     'asyncio',
     'websocket-client',
-    'websockets>=4.0,<5.0',
+    'websockets',
     'spectate>=0.2.1',
 ]
 

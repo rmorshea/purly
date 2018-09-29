@@ -11,11 +11,18 @@ class Client:
         self._socket = create_socket(url, connection_timeout=2)
 
     def sync(self):
-        recv = json.loads(self._socket.recv())
-        for msg in recv:
-            self._recv(msg)
-        self._socket.send(json.dumps(self._updates))
-        self._updates.clear()
+        recv = []
+        while True:
+            data = self._socket.recv()
+            if data:
+                recv.extend(json.loads(data))
+            outgoing = self._updates[:1000]
+            self._socket.send(json.dumps(outgoing))
+            self._updates[:1000] = []
+            if not self._updates:
+                break
+        for incoming in recv:
+            self._recv(incoming)
 
     def serve(self, function=None):
         while True:

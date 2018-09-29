@@ -1,13 +1,27 @@
+import os
+import IPython.display
+from uuid import uuid4
 from copy import deepcopy
 from spectate import mvc
 from weakref import WeakValueDictionary
 
 from .model import Client
 from .html import HTML
-from .utils import finalize
+from .utils import finalize, JS_PATH
+
+TO_BUILD = ["packages", "purly-widget", "build", "static", "js"]
+WIDGET_PATH = os.path.join(JS_PATH, *TO_BUILD)
+
+for filename in os.listdir(WIDGET_PATH):
+    if filename.endswith(".js"):
+        with open(os.path.join(WIDGET_PATH, filename), "r") as f:
+            SCRIPT = f.read()
+        break
 
 
 class Layout(Client):
+
+    _jupyter_displayed = False
 
     def __init__(self, url):
         super().__init__(url)
@@ -24,7 +38,7 @@ class Layout(Client):
         return new
 
     def __call__(self, constructor):
-        """A decorator for functions that define HTML DOM structures.
+        """A decorator for functions t'ws://127.0.0.1:8000/model/color-wheel/stream'hat define HTML DOM structures.
 
         The function should accept on argument - an :class:`HTML` object. It can
         return one or more :class:`HTML` objects, or other layout functions in order
@@ -139,12 +153,16 @@ class Layout(Client):
 
     def _repr_html_(self):
         """Rich display output for ipython."""
+
         uri = self._url.rsplit('/', 1)[0].split(':', 1)[1]
         socket_protocol = self._url.split(':', 1)[0]
-        if socket_protocol == "wss":
-            http_protocol = "https"
-        else:
-            http_protocol = "http"
-        url = http_protocol + ':' + uri + '/assets/index.html'
-        form = '<iframe src=%r frameBorder="0"></iframe>'
-        return form % url
+        mount_id = "purly-mount-" + uuid4().hex
+        endpoint = socket_protocol + ':' + uri + '/stream'
+        built_script = ("" if Layout._jupyter_displayed else f"<script>{SCRIPT}</script>")
+        html = f"""
+        <div id="{mount_id}"/>
+        {built_script}
+        <script>window.mountPurlyWidget("{endpoint}", "{mount_id}")</script>
+        """
+        Layout._jupyter_displayed = True
+        return html
