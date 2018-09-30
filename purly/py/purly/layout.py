@@ -153,7 +153,6 @@ class Layout(Client):
 
     def _repr_html_(self):
         """Rich display output for ipython."""
-
         uri = self._url.rsplit('/', 1)[0].split(':', 1)[1]
         socket_protocol = self._url.split(':', 1)[0]
         mount_id = "purly-mount-" + uuid4().hex

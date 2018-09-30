@@ -1,8 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import merge from 'deepmerge';
+import deepmerge from 'deepmerge';
 import produce from "immer";
 import _ from "lodash";
+
+
+function merge(target, source) {
+  let options = { arrayMerge: (target, source) => { return source; } };
+  return deepmerge(target, source, options);
+}
 
 
 class Layout extends React.Component {
@@ -44,10 +50,6 @@ class Layout extends React.Component {
 
     if ( !_.isEmpty(update) ) {
       let models = merge(this.models(), update);
-      if ( update.root ) {
-        let options = { arrayMerge: (target, source) => { return source; } }
-        models.root = merge(models.root, update.root, options);
-      }
       this.setState({ models });
     }
 

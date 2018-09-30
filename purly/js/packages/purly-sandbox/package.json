@@ -1,13 +1,13 @@
 {
-  "name": "purly-board",
+  "name": "purly-sandbox",
   "version": "0.0.1",
   "private": true,
   "dependencies": {
-    "deepmerge": "^2.1.1",
-    "lodash": "^4.17.10",
+    "jquery": "^3.3.1",
+    "purly-layout": "0.0.1",
     "react": "^16.4.1",
-    "react-dom": "^16.4.1",
-    "purly-layout": "0.0.1"
+    "react-codemirror": "^1.0.0",
+    "react-dom": "^16.5.2"
   },
   "devDependencies": {
     "react-scripts": "1.1.4"

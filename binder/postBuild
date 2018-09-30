@@ -3,10 +3,10 @@
 jupyter serverextension enable --py nbserverproxy --sys-prefix
 
 cd purly/js
-npm install -g lerna
+npm install lerna
 PUBLIC_URL="${JUPYTERHUB_OAUTH_CALLBACK_URL::-15}"
-lerna bootstrap
-lerna run build
+node_modules/.bin/lerna bootstrap
+node_modules/.bin/lerna run build
 
 cd ../py
 pip install --upgrade pip

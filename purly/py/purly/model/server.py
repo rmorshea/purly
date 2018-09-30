@@ -7,6 +7,7 @@ from multiprocessing import Process
 
 from sanic import Sanic, response
 from sanic.websocket import ConnectionClosed
+from sanic_cors import CORS
 
 from .utils import diff
 
@@ -47,12 +48,14 @@ class Server:
     def __init_subclass__(cls):
         cls._rules = cls._rules.copy()
 
-    def __init__(self, refresh=25):
+    def __init__(self, refresh=25, cors=False):
         self._models = {}
         self._updates = {}
         self._connections = {}
         self._refresh_rate = 0 if refresh is None else (1 / refresh)
         self.server = Sanic()
+        if cors:
+            CORS(self.server)
         for name in self._rules:
             register = getattr(self, name)
             register(self.server)
@@ -61,7 +64,7 @@ class Server:
         self.server.run(*args, **kwargs)
 
     def daemon(self, *args, **kwargs):
-        Process(
+        return Process(
             target=self.run,
             args=args,
             kwargs=kwargs,
