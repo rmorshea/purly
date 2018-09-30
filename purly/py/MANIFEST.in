@@ -1,2 +1,2 @@
-graft purly/react/build
+graft purly/js
 include LICENSE
