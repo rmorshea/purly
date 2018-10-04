@@ -29,6 +29,7 @@ if sys.version_info < (3,6) or sys.version_info >= (3, 7):
 
 requirements = [
     'sanic',
+    'sanic_cors',
     'asyncio',
     'websocket-client',
     'websockets',
