@@ -7,10 +7,9 @@ from weakref import WeakValueDictionary
 
 from .model import Client
 from .html import HTML
-from .utils import finalize, JS_PATH
+from .utils import finalize, STATIC_PATH
 
-TO_BUILD = ["packages", "purly-widget", "build", "static", "js"]
-WIDGET_PATH = os.path.join(JS_PATH, *TO_BUILD)
+WIDGET_PATH = os.path.join(STATIC_PATH, "widget", "static", "js")
 
 for filename in os.listdir(WIDGET_PATH):
     if filename.endswith(".js"):

@@ -1,17 +1,17 @@
 import os
 from sanic import response
 
-from .utils import JS_PATH
+from .utils import STATIC_PATH
 from .model import Server, rule
 
-BOARD_PATH = os.path.join(JS_PATH, "packages", "purly-board")
+BOARD_PATH = os.path.join(STATIC_PATH, "board")
 
 
 class Machine(Server):
 
     @rule('route', '/model/<model>/assets/<path:path>')
     async def _index(self, request, model, path):
-        absolute = os.path.join(BOARD_PATH, 'build', *path.split('\n'))
+        absolute = os.path.join(BOARD_PATH, *path.split('\n'))
         return await response.file(absolute)
 
     @rule('route', '/model/<model>/state')

@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import os
 import sys
+import shutil
 from glob import glob
 from setuptools import find_packages
 from distutils.core import setup
@@ -38,10 +39,14 @@ requirements = [
 # Library Version
 #-----------------------------------------------------------------------------
 
-with open(os.path.join(root, '_version.py')) as f:
-    _ = {}
-    exec(f.read(), {}, _)
-    version = _["__version__"]
+with open(os.path.join(root, '__init__.py')) as f:
+    for line in f.read().split("\n"):
+        if line.startswith("__version__ = "):
+            version = eval(line.split("=", 1)[1])
+            break
+    else:
+        print("No version found in purly/__init__.py")
+        sys.exit(1)
 
 #-----------------------------------------------------------------------------
 # Library Description

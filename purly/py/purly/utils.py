@@ -2,7 +2,7 @@ import os
 from weakref import finalize as _finalize
 
 HERE = os.path.dirname(__file__)
-JS_PATH = os.path.join(HERE, "..", "..", "js")
+STATIC_PATH = os.path.join(HERE, "static")
 
 
 def finalize(obj, *args, **kwargs):

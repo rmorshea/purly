@@ -2,6 +2,9 @@
 # Python
 # ======
 
+# static build from JS
+purly/static/*
+
 # Byte-compiled / optimized / DLL files
 # -------------------------------------
 __pycache__/
