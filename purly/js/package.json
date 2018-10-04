@@ -5,7 +5,7 @@
     "lerna": "^3.4.0"
   },
   "scripts": {
-    "bootstrap": "./node_modules/.bin/lerna bootstrap",
+    "bootstrap": "./node_modules/.bin/lerna exec npm install",
     "build": "./node_modules/.bin/lerna run build"
   },
   "workspaces": {

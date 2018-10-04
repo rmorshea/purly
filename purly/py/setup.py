@@ -32,7 +32,7 @@ requirements = [
     'sanic_cors',
     'asyncio',
     'websocket-client',
-    'websockets',
+    'websockets==5.0',
     'spectate>=0.2.1',
 ]
 

@@ -1,3 +1,3 @@
 cd purly/py
-pip install -e .
+pip install .
 cd ../

@@ -3,14 +3,14 @@ cd purly
 # clean up possible old install
 if [ -d "py/purly/static" ]; then
   rm -rf py/purly/static
-  mkdir py/purly/static
 fi
+mkdir py/purly/static
 
 # build js packages
 cd js
 npm install
-lerna bootstrap
-lerna run build
+npm run bootstrap
+npm run build
 cd ../
 
 # copy built files to py
