@@ -5,8 +5,8 @@
     "lerna": "^3.4.0"
   },
   "scripts": {
-    "start": "cd packages/purl-widget && ",
-    "build": "lerna run build"
+    "bootstrap": "./node_modules/.bin/lerna bootstrap",
+    "build": "./node_modules/.bin/lerna run build"
   },
   "workspaces": {
     "packages": [
