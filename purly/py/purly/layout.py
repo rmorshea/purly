@@ -1,5 +1,4 @@
 import os
-import IPython.display
 from uuid import uuid4
 from copy import deepcopy
 from spectate import mvc
@@ -20,7 +19,7 @@ for filename in os.listdir(WIDGET_PATH):
 
 class Layout(Client):
 
-    _jupyter_displayed = False
+    _html_repr_shown = False
 
     def __init__(self, url):
         super().__init__(url)
@@ -151,16 +150,16 @@ class Layout(Client):
                 self._contains[key].trigger(event)
 
     def _repr_html_(self):
-        """Rich display output for ipython."""
+        """Rich HTML display output."""
         uri = self._url.rsplit('/', 1)[0].split(':', 1)[1]
         socket_protocol = self._url.split(':', 1)[0]
         mount_id = "purly-mount-" + uuid4().hex
         endpoint = socket_protocol + ':' + uri + '/stream'
-        built_script = ("" if Layout._jupyter_displayed else f"<script>{SCRIPT}</script>")
+        built_script = ("" if Layout._html_repr_shown else f"<script>{SCRIPT}</script>")
         html = f"""
         <div id="{mount_id}"/>
         {built_script}
         <script>window.mountPurlyWidget("{endpoint}", "{mount_id}")</script>
         """
-        Layout._jupyter_displayed = True
+        Layout._html_repr_shown = True
         return html
