@@ -1,34 +1,5 @@
-# ======
 # Python
-# ======
-
-# Byte-compiled / optimized / DLL files
-# -------------------------------------
+# ------
 __pycache__/
 *.py[cod]
-
-# Python - Distribution / packaging
-# ---------------------------------
-env/
-dist
-build
-eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Sphinx documentation
-# --------------------
-docs/_build/
-
-# Jupyter Notebook
 .ipynb_checkpoints
-
-# Pytest
-# ------
-.pytest_cache
