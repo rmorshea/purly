@@ -9,29 +9,30 @@ from sanic import Sanic, response
 from sanic.websocket import ConnectionClosed
 from sanic_cors import CORS
 
-from .utils import diff
+from .utils import diff, diritems
 
 
 class rule:
 
     function = None
 
+    def __new__(cls, *args, **kwargs):
+        def __init__(function):
+            self = super(rule, cls).__new__(cls)
+            self.__init__(function, *args, **kwargs)
+            return self
+        return __init__
+
     def __init__(self, *args, **kwargs):
-        self.name, *self.args = args
+        self.function = args[0]
+        self.name, *self.args = args[1:]
         self.kwargs = kwargs
 
-    def __call__(self, function):
-        self.function = function
-        return self
-
-    def __set_name__(self, cls, name):
-        cls._rules.add(name)
-
     def __get__(self, obj, cls):
-        if obj is None:
-            return self
+        if obj is not None:
+            return types.MethodType(self.function, obj)
         else:
-            return types.MethodType(self.setup, obj)
+            return self
 
     def setup(self, obj, app):
         if self.function is not None:
@@ -43,25 +44,18 @@ class rule:
 
 class Server:
 
-    _rules = set()
-
-    def __init_subclass__(cls):
-        cls._rules = cls._rules.copy()
-
     def __init__(self, refresh=25, cors=False):
-        self._models = {}
-        self._updates = {}
-        self._connections = {}
         self._refresh_rate = 0 if refresh is None else (1 / refresh)
-        self.server = Sanic()
+        self._server = Sanic()
         if cors:
-            CORS(self.server)
-        for name in self._rules:
-            register = getattr(self, name)
-            register(self.server)
+            CORS(self._server)
+        for k, v in diritems(type(self)):
+            if isinstance(v, rule):
+                v.setup(self, self._server)
+        self._init_server(self._server)
 
     def run(self, *args, **kwargs):
-        self.server.run(*args, **kwargs)
+        self._server.run(*args, **kwargs)
 
     def daemon(self, *args, **kwargs):
         return Process(
@@ -74,12 +68,7 @@ class Server:
     @rule('websocket', '/model/<model>/stream')
     async def _stream(self, request, socket, model):
         conn = uuid4().hex
-        self._connections.setdefault(model, []).append(conn)
-        m = self._models.setdefault(model, {})
-        # send off the current state of the model as first message
-        initialize = {'header': {'type': 'update'}, 'content': m}
-        self._updates[conn] = [initialize]
-        # keep a reference to the model alive.
+        self._init_connection(conn, model)
         try:
             while True:
                 start = time.time()
@@ -99,7 +88,19 @@ class Server:
             socket.close()
             raise
         finally:
-            self._clean(model, conn)
+            self._clean(conn, model)
+
+    def _init_server(self, server):
+        self._models = {}
+        self._updates = {}
+        self._connections = {}
+
+    def _init_connection(self, conn, model):
+        self._connections.setdefault(model, set()).add(conn)
+        state = self._models.setdefault(model, {})
+        # send off the current state of the model as first message
+        initialize = {'header': {'type': 'update'}, 'content': state}
+        self._updates[conn] = [initialize]
 
     def _load_update(self, model, update):
         return diff(self._models[model], update)
@@ -108,25 +109,26 @@ class Server:
         return signal
 
     def _sync(self, conn):
-        index = len(self._updates[conn])
-        send = self._updates[conn][:index]
-        self._updates[conn][:index] = []
+        send = self._updates[conn][:]
+        self._updates[conn].clear()
         return send
 
     def _load(self, conn, model, update):
-        distribute = []
+        messages = []
         for data in update:
             datatype = data['header']['type']
             method = getattr(self, '_load_%s' % datatype)
             loaded = method(model, data['content'])
             if loaded:
                 data[datatype] = loaded
-                distribute.append(data)
-        for c in self._connections[model]:
-            if c != conn:
-                self._updates[c].extend(distribute)
+                messages.append(data)
+        self._to_sync(conn, model, messages)
 
-    def _clean(self, model, conn):
+    def _to_sync(self, conn, model, messages):
+        for c in self._connections.difference({model}):
+            self._updates[c].extend(messages)
+
+    def _clean(self, conn, model):
         del self._updates[conn]
         self._connections[model].remove(conn)
         if not len(self._connections[model]):
