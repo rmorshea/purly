@@ -27,3 +27,13 @@ def merged_difference(into, data, diff):
         elif v is not None:
             diff[k] = into[k] = v
     return into, diff
+
+
+def diritems(x):
+    for k in dir(x):
+        try:
+            v = getattr(x, k)
+        except AttributeError:
+            pass
+        else:
+            yield k, v
