@@ -125,7 +125,7 @@ class Server:
         self._to_sync(conn, model, messages)
 
     def _to_sync(self, conn, model, messages):
-        for c in self._connections.difference({model}):
+        for c in self._connections[model].difference({model}):
             self._updates[c].extend(messages)
 
     def _clean(self, conn, model):
